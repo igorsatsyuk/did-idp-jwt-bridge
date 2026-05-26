@@ -1,0 +1,17 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: identity-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+blockchain:
+  rpc-url: http://localhost:8545
+  contract-address: ${DID_REGISTRY_ADDRESS:0x0000000000000000000000000000000000000000}
+  account-private-key: ${BLOCKCHAIN_PRIVATE_KEY:}

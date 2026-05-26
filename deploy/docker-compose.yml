@@ -1,0 +1,67 @@
+version: "3.9"
+
+services:
+  blockchain:
+    image: trufflesuite/ganache:latest
+    container_name: did-blockchain
+    ports:
+      - "8545:8545"
+    command: >
+      --chain.chainId 1337
+      --wallet.totalAccounts 5
+      --wallet.defaultBalance 1000
+      --miner.blockTime 0
+      --logging.verbose
+    networks:
+      - did-network
+
+  identity-service:
+    build:
+      context: ../backend
+      dockerfile: identity-service/Dockerfile
+    container_name: did-identity-service
+    ports:
+      - "8081:8081"
+    environment:
+      - BLOCKCHAIN_RPC_URL=http://blockchain:8545
+      - DID_REGISTRY_ADDRESS=${DID_REGISTRY_ADDRESS}
+      - BLOCKCHAIN_PRIVATE_KEY=${BLOCKCHAIN_PRIVATE_KEY}
+    depends_on:
+      - blockchain
+    networks:
+      - did-network
+
+  auth-bridge-service:
+    build:
+      context: ../backend
+      dockerfile: auth-bridge-service/Dockerfile
+    container_name: did-auth-bridge
+    ports:
+      - "8082:8082"
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - IDENTITY_SERVICE_URL=http://identity-service:8081
+      - DID_REGISTRY_ADDRESS=${DID_REGISTRY_ADDRESS}
+      - BLOCKCHAIN_RPC_URL=http://blockchain:8545
+    depends_on:
+      - identity-service
+    networks:
+      - did-network
+
+  resource-api:
+    build:
+      context: ../backend
+      dockerfile: resource-api/Dockerfile
+    container_name: did-resource-api
+    ports:
+      - "8083:8083"
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - auth-bridge-service
+    networks:
+      - did-network
+
+networks:
+  did-network:
+    driver: bridge

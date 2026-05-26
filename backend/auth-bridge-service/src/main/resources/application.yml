@@ -1,0 +1,23 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: auth-bridge-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+jwt:
+  secret: ${JWT_SECRET:change-me-in-production-this-must-be-at-least-32-chars}
+  expiration-minutes: 60
+
+services:
+  identity-url: ${IDENTITY_SERVICE_URL:http://localhost:8081}
+
+blockchain:
+  rpc-url: http://localhost:8545
+  contract-address: ${DID_REGISTRY_ADDRESS:0x0000000000000000000000000000000000000000}

@@ -1,0 +1,29 @@
+# Maven
+target/
+*.class
+*.jar
+*.war
+
+# Spring Boot
+*.log
+application-local.yml
+
+# Node / Hardhat
+node_modules/
+blockchain/cache/
+blockchain/artifacts/
+blockchain/typechain-types/
+
+# Environment
+.env
+!.env.example
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
