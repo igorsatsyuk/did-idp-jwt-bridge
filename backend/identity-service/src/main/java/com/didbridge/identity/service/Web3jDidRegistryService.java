@@ -39,9 +39,7 @@ public class Web3jDidRegistryService implements DidRegistryService {
 
     @Override
     public Mono<DidDocument> findByDid(String did) {
-        RemoteFunctionCall<Tuple5<String, BigInteger, BigInteger, BigInteger, String>> call =
-                contract.getDid(did);
-        return Mono.fromCallable(call::send)
+        return Mono.fromCallable(() -> contract.getDid(did).send())
                 .subscribeOn(Schedulers.boundedElastic())
                 .map(tuple -> toDidDocument(did, tuple))
                 .onErrorMap(ex -> containsRevert(ex, REVERT_DID_NOT_FOUND),
@@ -80,7 +78,12 @@ public class Web3jDidRegistryService implements DidRegistryService {
         }
 
         String status = receipt.getStatus();
-        if (status == null || isSuccessfulStatus(status)) {
+        if (status == null) {
+            throw new IllegalStateException(
+                    "Blockchain transaction returned receipt with unknown status for operation '%s', DID '%s'"
+                            .formatted(operation, did));
+        }
+        if (isSuccessfulStatus(status)) {
             return receipt;
         }
 

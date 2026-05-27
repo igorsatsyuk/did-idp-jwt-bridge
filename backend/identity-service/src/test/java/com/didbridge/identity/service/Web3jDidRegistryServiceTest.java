@@ -11,12 +11,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.web3j.protocol.core.RemoteFunctionCall;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tuples.generated.Tuple5;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.math.BigInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -76,6 +79,26 @@ class Web3jDidRegistryServiceTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void findByDid_createsFreshContractCallPerSubscription() throws Exception {
+        Tuple5<String, BigInteger, BigInteger, BigInteger, String> tuple =
+                new Tuple5<>(PUBLIC_KEY, ACTIVE, TIMESTAMP, TIMESTAMP, "0xowner");
+        RemoteFunctionCall<Tuple5<String, BigInteger, BigInteger, BigInteger, String>> call1 =
+                mock(RemoteFunctionCall.class);
+        RemoteFunctionCall<Tuple5<String, BigInteger, BigInteger, BigInteger, String>> call2 =
+                mock(RemoteFunctionCall.class);
+        when(contract.getDid(DID)).thenReturn(call1, call2);
+        when(call1.send()).thenReturn(tuple);
+        when(call2.send()).thenReturn(tuple);
+
+        Mono<DidDocument> mono = service.findByDid(DID);
+        mono.block();
+        mono.block();
+
+        verify(contract, times(2)).getDid(DID);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void findByDid_throwsDidNotFoundException_whenContractReverts() throws Exception {
         RemoteFunctionCall<Tuple5<String, BigInteger, BigInteger, BigInteger, String>> call =
                 mock(RemoteFunctionCall.class);
@@ -94,6 +117,7 @@ class Web3jDidRegistryServiceTest {
     @SuppressWarnings("unchecked")
     void register_callsContractAndReturnsDid() throws Exception {
         TransactionReceipt receipt = mock(TransactionReceipt.class);
+        when(receipt.getStatus()).thenReturn("0x1");
         RemoteFunctionCall<TransactionReceipt> txCall = mock(RemoteFunctionCall.class);
         when(contract.registerDid(DID, PUBLIC_KEY)).thenReturn(txCall);
         when(txCall.send()).thenReturn(receipt);
@@ -116,6 +140,7 @@ class Web3jDidRegistryServiceTest {
     @SuppressWarnings("unchecked")
     void revoke_completesSuccessfully() throws Exception {
         TransactionReceipt receipt = mock(TransactionReceipt.class);
+        when(receipt.getStatus()).thenReturn("0x1");
         RemoteFunctionCall<TransactionReceipt> call = mock(RemoteFunctionCall.class);
         when(contract.revokeDid(DID)).thenReturn(call);
         when(call.send()).thenReturn(receipt);
@@ -165,6 +190,22 @@ class Web3jDidRegistryServiceTest {
 
         StepVerifier.create(service.register(DID, PUBLIC_KEY))
                 .expectErrorMatches(DidAlreadyRegisteredException.class::isInstance)
+                .verify();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void register_throwsIllegalStateException_whenReceiptStatusIsNull() throws Exception {
+        TransactionReceipt receipt = mock(TransactionReceipt.class);
+        when(receipt.getStatus()).thenReturn(null);
+
+        RemoteFunctionCall<TransactionReceipt> txCall = mock(RemoteFunctionCall.class);
+        when(contract.registerDid(DID, PUBLIC_KEY)).thenReturn(txCall);
+        when(txCall.send()).thenReturn(receipt);
+
+        StepVerifier.create(service.register(DID, PUBLIC_KEY))
+                .expectErrorMatches(ex -> ex instanceof IllegalStateException
+                        && ex.getMessage().contains("unknown status"))
                 .verify();
     }
 
