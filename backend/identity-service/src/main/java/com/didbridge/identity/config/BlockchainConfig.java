@@ -27,6 +27,11 @@ public class BlockchainConfig {
             throw new IllegalStateException(
                     "blockchain.account-private-key must be set (e.g. via BLOCKCHAIN_ACCOUNT_PRIVATE_KEY env var)");
         }
+        if (!StringUtils.hasText(contractAddress)
+                || contractAddress.matches("0x0{40}")) {
+            throw new IllegalStateException(
+                    "blockchain.contract-address must be set to a valid contract address (e.g. via DID_REGISTRY_ADDRESS env var)");
+        }
         Credentials credentials = Credentials.create(privateKey);
         return DidRegistry.load(contractAddress, web3j, credentials, new DefaultGasProvider());
     }

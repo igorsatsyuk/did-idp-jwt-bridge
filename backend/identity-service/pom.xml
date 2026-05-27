@@ -72,7 +72,7 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <excludes>
-                        <!-- Spring @Configuration classes require app context; tested via integration tests -->
+                        <!-- Spring @Configuration requiring app context; excluded from unit test coverage -->
                         <exclude>com/didbridge/identity/config/BlockchainConfig.class</exclude>
                     </excludes>
                 </configuration>

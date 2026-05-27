@@ -17,6 +17,9 @@ public class InMemoryDidRegistryService implements DidRegistryService {
 
     @Override
     public Mono<DidDocument> register(String did, String publicKey) {
+        if (store.containsKey(did)) {
+            return Mono.error(new DidAlreadyRegisteredException(did, null));
+        }
         DidDocument doc = new DidDocument(did, publicKey, DidStatus.ACTIVE, Instant.now(), Instant.now());
         store.put(did, doc);
         return Mono.just(doc);

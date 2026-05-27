@@ -43,6 +43,15 @@ class InMemoryDidRegistryServiceTest {
     }
 
     @Test
+    void register_throwsDidAlreadyRegisteredException_whenDuplicate() {
+        service.register(DID, PUBLIC_KEY).block();
+
+        StepVerifier.create(service.register(DID, "0xother"))
+                .expectErrorMatches(DidAlreadyRegisteredException.class::isInstance)
+                .verify();
+    }
+
+    @Test
     void findByDid_throwsDidNotFoundException_whenNotRegistered() {
         StepVerifier.create(service.findByDid(DID))
                 .expectErrorMatches(ex -> ex instanceof DidNotFoundException
