@@ -61,9 +61,9 @@
                     <nativeJavaType>true</nativeJavaType>
                     <outputFormat>java</outputFormat>
                     <soliditySourceFiles>
-                        <directory>${project.basedir}/../../blockchain/contracts</directory>
+                        <directory>${maven.multiModuleProjectDirectory}/blockchain/contracts</directory>
                         <includes>
-                            <include>**/*.sol</include>
+                            <include>DidRegistry.sol</include>
                         </includes>
                     </soliditySourceFiles>
                 </configuration>
