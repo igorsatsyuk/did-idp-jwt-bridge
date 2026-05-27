@@ -59,11 +59,13 @@ def esc(value: str) -> str:
 
 def compose_message() -> str:
     current_overall = overall_status()
+    repo_name = os.environ.get("GITHUB_REPOSITORY", "").split("/")[-1] or "CI"
+    branch = os.environ.get("GITHUB_HEAD_REF") or os.environ.get("GITHUB_REF_NAME", "")
     lines = [
-        "did-idp-jwt-bridge CI finished",
+        f"{repo_name} CI finished",
         "",
         f"{status_icon(current_overall)} <b>Status:</b> {esc(current_overall)}",
-        f"<b>Branch:</b> {esc(os.environ.get('GITHUB_REF_NAME', ''))}",
+        f"<b>Branch:</b> {esc(branch)}",
         f"<b>Commit:</b> {esc(os.environ.get('GITHUB_SHA', ''))}",
         f"<b>Actor:</b> {esc(os.environ.get('GITHUB_ACTOR', ''))}",
         f"<b>Workflow:</b> {esc(os.environ.get('GITHUB_WORKFLOW', ''))}",

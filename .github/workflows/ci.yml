@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
 
@@ -32,10 +32,10 @@ jobs:
       - name: Run backend tests
         run: mvn -B -ntp -f backend/pom.xml verify
 
-      - name: Check for JaCoCo exec files
+      - name: Check for JaCoCo XML reports
         id: jacoco-check
         run: |
-          count=$(find backend -name "jacoco.exec" 2>/dev/null | wc -l)
+          count=$(find backend -name "jacoco.xml" -path "*/jacoco/jacoco.xml" 2>/dev/null | wc -l)
           echo "found=$( [ "$count" -gt 0 ] && echo 'true' || echo 'false' )" >> "$GITHUB_OUTPUT"
 
       - name: Upload backend JaCoCo reports
