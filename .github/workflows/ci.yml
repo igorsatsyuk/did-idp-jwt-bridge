@@ -27,13 +27,19 @@ jobs:
       - name: Run backend tests
         run: mvn -B -ntp -f backend/pom.xml verify
 
+      - name: Check for JaCoCo exec files
+        id: jacoco-check
+        run: |
+          count=$(find backend -name "jacoco.exec" 2>/dev/null | wc -l)
+          echo "found=$( [ "$count" -gt 0 ] && echo 'true' || echo 'false' )" >> "$GITHUB_OUTPUT"
+
       - name: Upload backend JaCoCo reports
-        if: always()
+        if: always() && steps.jacoco-check.outputs.found == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: backend-jacoco-reports
           path: backend/**/target/site/jacoco/jacoco.xml
-          if-no-files-found: warn
+          if-no-files-found: ignore
           retention-days: 7
 
   blockchain:
@@ -126,6 +132,7 @@ jobs:
           cache: maven
 
       - name: Download backend JaCoCo reports
+        id: download-jacoco
         if: steps.sonar-check.outputs.sonar_enabled == 'true'
         continue-on-error: true
         uses: actions/download-artifact@v4
@@ -145,7 +152,7 @@ jobs:
         run: |
           host_url="${SONAR_HOST_URL:-https://sonarcloud.io}"
           report_paths=""
-          if [ -d "backend-coverage" ]; then
+          if [ "${{ steps.download-jacoco.outcome }}" = "success" ] && [ -d "backend-coverage" ]; then
             report_paths=$(find "$(pwd)/backend-coverage" -type f -name "jacoco.xml" -print 2>/dev/null | paste -sd, - || true)
           fi
           cmd=(
@@ -284,7 +291,7 @@ jobs:
 
       - name: Run SonarQube analysis (blockchain)
         if: steps.sonar-check.outputs.sonar_enabled == 'true'
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_HOST_URL: ${{ vars.SONAR_URL || 'https://sonarcloud.io' }}
         with:
