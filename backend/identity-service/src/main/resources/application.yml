@@ -13,5 +13,5 @@ management:
 
 blockchain:
   rpc-url: http://localhost:8545
-  contract-address: ${DID_REGISTRY_ADDRESS:0x0000000000000000000000000000000000000000}
-  account-private-key: ${BLOCKCHAIN_ACCOUNT_PRIVATE_KEY:}
+  contract-address: ${DID_REGISTRY_ADDRESS}
+  account-private-key: ${BLOCKCHAIN_ACCOUNT_PRIVATE_KEY}

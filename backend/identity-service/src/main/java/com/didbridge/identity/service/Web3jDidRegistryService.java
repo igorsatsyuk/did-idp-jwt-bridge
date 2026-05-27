@@ -5,6 +5,7 @@ import com.didbridge.model.DidDocument;
 import com.didbridge.model.DidStatus;
 import org.springframework.stereotype.Service;
 import org.web3j.protocol.core.RemoteFunctionCall;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tuples.generated.Tuple5;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -29,6 +30,7 @@ public class Web3jDidRegistryService implements DidRegistryService {
     public Mono<DidDocument> register(String did, String publicKey) {
         return Mono.fromCallable(() -> contract.registerDid(did, publicKey).send())
                 .subscribeOn(Schedulers.boundedElastic())
+                .map(receipt -> ensureTransactionSucceeded(did, "register", receipt))
                 .onErrorMap(ex -> containsRevert(ex, REVERT_ALREADY_REGISTERED),
                         ex -> new DidAlreadyRegisteredException(did, ex))
                 .flatMap(ignored -> findByDid(did));
@@ -49,6 +51,7 @@ public class Web3jDidRegistryService implements DidRegistryService {
     public Mono<Void> revoke(String did) {
         return Mono.fromCallable(() -> contract.revokeDid(did).send())
                 .subscribeOn(Schedulers.boundedElastic())
+                .map(receipt -> ensureTransactionSucceeded(did, "revoke", receipt))
                 .onErrorMap(ex -> containsRevert(ex, REVERT_DID_NOT_FOUND),
                         ex -> new DidNotFoundException(did, ex))
                 .onErrorMap(ex -> containsRevert(ex, REVERT_NOT_OWNER),
@@ -66,6 +69,40 @@ public class Web3jDidRegistryService implements DidRegistryService {
                 Instant.ofEpochSecond(t.component3().longValue()),
                 Instant.ofEpochSecond(t.component4().longValue())
         );
+    }
+
+    private TransactionReceipt ensureTransactionSucceeded(String did, String operation, TransactionReceipt receipt) {
+        if (receipt == null) {
+            throw new IllegalStateException("Blockchain transaction returned no receipt for DID: " + did);
+        }
+
+        String status = receipt.getStatus();
+        if (status == null || isSuccessfulStatus(status)) {
+            return receipt;
+        }
+
+        String revertReason = receipt.getRevertReason();
+        RuntimeException txFailure = new IllegalStateException(
+                "Blockchain transaction failed for operation '%s', DID '%s', status '%s', revert reason '%s'"
+                        .formatted(operation, did, status, revertReason),
+                null
+        );
+
+        if (REVERT_ALREADY_REGISTERED.equals(revertReason)) {
+            throw new DidAlreadyRegisteredException(did, txFailure);
+        }
+        if (REVERT_DID_NOT_FOUND.equals(revertReason)) {
+            throw new DidNotFoundException(did, txFailure);
+        }
+        if (REVERT_NOT_OWNER.equals(revertReason)) {
+            throw new DidOwnershipException(did, txFailure);
+        }
+
+        throw txFailure;
+    }
+
+    private static boolean isSuccessfulStatus(String status) {
+        return "0x1".equalsIgnoreCase(status) || "0x01".equalsIgnoreCase(status) || "1".equals(status);
     }
 
     /**

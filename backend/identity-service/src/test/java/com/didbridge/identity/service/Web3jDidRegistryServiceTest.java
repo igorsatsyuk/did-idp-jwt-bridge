@@ -154,6 +154,22 @@ class Web3jDidRegistryServiceTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void register_throwsDidAlreadyRegisteredException_whenReceiptHasFailedStatus() throws Exception {
+        TransactionReceipt receipt = mock(TransactionReceipt.class);
+        when(receipt.getStatus()).thenReturn("0x0");
+        when(receipt.getRevertReason()).thenReturn("DID already registered");
+
+        RemoteFunctionCall<TransactionReceipt> txCall = mock(RemoteFunctionCall.class);
+        when(contract.registerDid(DID, PUBLIC_KEY)).thenReturn(txCall);
+        when(txCall.send()).thenReturn(receipt);
+
+        StepVerifier.create(service.register(DID, PUBLIC_KEY))
+                .expectErrorMatches(DidAlreadyRegisteredException.class::isInstance)
+                .verify();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void revoke_throwsDidOwnershipException_whenNotOwner() throws Exception {
         RemoteFunctionCall<TransactionReceipt> call = mock(RemoteFunctionCall.class);
         when(contract.revokeDid(DID)).thenReturn(call);
@@ -191,6 +207,38 @@ class Web3jDidRegistryServiceTest {
         StepVerifier.create(service.revoke(DID))
                 .expectErrorMatches(ex -> ex instanceof RuntimeException
                         && ex.getMessage().equals("network error"))
+                .verify();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void revoke_throwsDidNotFoundException_whenReceiptHasFailedStatus() throws Exception {
+        TransactionReceipt receipt = mock(TransactionReceipt.class);
+        when(receipt.getStatus()).thenReturn("0x0");
+        when(receipt.getRevertReason()).thenReturn("DID does not exist");
+
+        RemoteFunctionCall<TransactionReceipt> call = mock(RemoteFunctionCall.class);
+        when(contract.revokeDid(DID)).thenReturn(call);
+        when(call.send()).thenReturn(receipt);
+
+        StepVerifier.create(service.revoke(DID))
+                .expectErrorMatches(DidNotFoundException.class::isInstance)
+                .verify();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void revoke_throwsDidOwnershipException_whenReceiptHasFailedStatus() throws Exception {
+        TransactionReceipt receipt = mock(TransactionReceipt.class);
+        when(receipt.getStatus()).thenReturn("0x0");
+        when(receipt.getRevertReason()).thenReturn("Not the DID owner");
+
+        RemoteFunctionCall<TransactionReceipt> call = mock(RemoteFunctionCall.class);
+        when(contract.revokeDid(DID)).thenReturn(call);
+        when(call.send()).thenReturn(receipt);
+
+        StepVerifier.create(service.revoke(DID))
+                .expectErrorMatches(DidOwnershipException.class::isInstance)
                 .verify();
     }
 }
