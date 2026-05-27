@@ -6,8 +6,10 @@ services:
     container_name: did-blockchain
     ports:
       - "8545:8545"
+    # Local development only. Never use deterministic mnemonics in production.
     command: >
       --chain.chainId 1337
+      --wallet.mnemonic "${GANACHE_MNEMONIC:-test test test test test test test test test test test junk}"
       --wallet.totalAccounts 5
       --wallet.defaultBalance 1000
       --miner.blockTime 0
@@ -25,7 +27,7 @@ services:
     environment:
       - BLOCKCHAIN_RPC_URL=http://blockchain:8545
       - DID_REGISTRY_ADDRESS=${DID_REGISTRY_ADDRESS}
-      - BLOCKCHAIN_PRIVATE_KEY=${BLOCKCHAIN_PRIVATE_KEY}
+      - BLOCKCHAIN_ACCOUNT_PRIVATE_KEY=${BLOCKCHAIN_ACCOUNT_PRIVATE_KEY}
     depends_on:
       - blockchain
     networks:

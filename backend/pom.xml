@@ -71,6 +71,11 @@
         <pluginManagement>
             <plugins>
                 <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>3.6.0</version>
+                </plugin>
+                <plugin>
                     <groupId>org.sonarsource.scanner.maven</groupId>
                     <artifactId>sonar-maven-plugin</artifactId>
                     <version>5.1.0.4751</version>
@@ -83,7 +88,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.12</version>
+                    <version>0.8.14</version>
                     <executions>
                         <execution>
                             <id>prepare-agent</id>
