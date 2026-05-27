@@ -3,7 +3,7 @@
 ## Phase 1 — Base Infrastructure
 
 - [x] Repository initialization and Maven multi-module structure
-- [ ] Blockchain environment (Hardhat + Ganache node on port 8545)
+- [x] Blockchain environment (Hardhat + Ganache node on port 8545)
 - [ ] DidRegistry smart contract (register, revoke, isActive)
 
 ## Phase 2 — Backend Services
