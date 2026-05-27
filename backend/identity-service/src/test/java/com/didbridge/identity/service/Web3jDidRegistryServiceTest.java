@@ -195,6 +195,22 @@ class Web3jDidRegistryServiceTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void register_throwsDidAlreadyRegisteredException_whenReceiptReasonContainsPrefix() throws Exception {
+        TransactionReceipt receipt = mock(TransactionReceipt.class);
+        when(receipt.getStatus()).thenReturn("0x0");
+        when(receipt.getRevertReason()).thenReturn("execution reverted: DID already registered");
+
+        RemoteFunctionCall<TransactionReceipt> txCall = mock(RemoteFunctionCall.class);
+        when(contract.registerDid(DID, PUBLIC_KEY)).thenReturn(txCall);
+        when(txCall.send()).thenReturn(receipt);
+
+        StepVerifier.create(service.register(DID, PUBLIC_KEY))
+                .expectErrorMatches(DidAlreadyRegisteredException.class::isInstance)
+                .verify();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void register_throwsIllegalStateException_whenReceiptStatusIsNull() throws Exception {
         TransactionReceipt receipt = mock(TransactionReceipt.class);
         when(receipt.getStatus()).thenReturn(null);
@@ -273,6 +289,22 @@ class Web3jDidRegistryServiceTest {
         TransactionReceipt receipt = mock(TransactionReceipt.class);
         when(receipt.getStatus()).thenReturn("0x0");
         when(receipt.getRevertReason()).thenReturn("Not the DID owner");
+
+        RemoteFunctionCall<TransactionReceipt> call = mock(RemoteFunctionCall.class);
+        when(contract.revokeDid(DID)).thenReturn(call);
+        when(call.send()).thenReturn(receipt);
+
+        StepVerifier.create(service.revoke(DID))
+                .expectErrorMatches(DidOwnershipException.class::isInstance)
+                .verify();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void revoke_throwsDidOwnershipException_whenReceiptReasonContainsPrefix() throws Exception {
+        TransactionReceipt receipt = mock(TransactionReceipt.class);
+        when(receipt.getStatus()).thenReturn("0x0");
+        when(receipt.getRevertReason()).thenReturn("VM Exception while processing transaction: revert Not the DID owner");
 
         RemoteFunctionCall<TransactionReceipt> call = mock(RemoteFunctionCall.class);
         when(contract.revokeDid(DID)).thenReturn(call);

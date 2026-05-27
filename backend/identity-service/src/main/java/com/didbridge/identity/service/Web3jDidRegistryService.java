@@ -11,6 +11,7 @@ import reactor.core.scheduler.Schedulers;
 
 import java.math.BigInteger;
 import java.time.Instant;
+import java.util.Locale;
 
 @Service
 public class Web3jDidRegistryService implements DidRegistryService {
@@ -93,13 +94,13 @@ public class Web3jDidRegistryService implements DidRegistryService {
                 null
         );
 
-        if (REVERT_ALREADY_REGISTERED.equals(revertReason)) {
+        if (revertReasonMatches(revertReason, REVERT_ALREADY_REGISTERED)) {
             throw new DidAlreadyRegisteredException(did, txFailure);
         }
-        if (REVERT_DID_NOT_FOUND.equals(revertReason)) {
+        if (revertReasonMatches(revertReason, REVERT_DID_NOT_FOUND)) {
             throw new DidNotFoundException(did, txFailure);
         }
-        if (REVERT_NOT_OWNER.equals(revertReason)) {
+        if (revertReasonMatches(revertReason, REVERT_NOT_OWNER)) {
             throw new DidOwnershipException(did, txFailure);
         }
 
@@ -108,6 +109,13 @@ public class Web3jDidRegistryService implements DidRegistryService {
 
     private static boolean isSuccessfulStatus(String status) {
         return "0x1".equalsIgnoreCase(status) || "0x01".equalsIgnoreCase(status) || "1".equals(status);
+    }
+
+    private static boolean revertReasonMatches(String actual, String expected) {
+        if (actual == null || expected == null) {
+            return false;
+        }
+        return actual.toLowerCase(Locale.ROOT).contains(expected.toLowerCase(Locale.ROOT));
     }
 
     /**
