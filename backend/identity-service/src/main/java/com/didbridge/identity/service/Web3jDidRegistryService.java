@@ -31,7 +31,8 @@ public class Web3jDidRegistryService implements DidRegistryService {
         return Mono.fromCallable(() -> contract.registerDid(did, publicKey).send())
                 .subscribeOn(Schedulers.boundedElastic())
                 .map(receipt -> ensureTransactionSucceeded(did, "register", receipt))
-                .onErrorMap(ex -> containsRevert(ex, REVERT_ALREADY_REGISTERED),
+                .onErrorMap(ex -> !(ex instanceof DidAlreadyRegisteredException)
+                                && containsRevert(ex, REVERT_ALREADY_REGISTERED),
                         ex -> new DidAlreadyRegisteredException(did, ex))
                 .flatMap(ignored -> findByDid(did));
     }
@@ -52,9 +53,11 @@ public class Web3jDidRegistryService implements DidRegistryService {
         return Mono.fromCallable(() -> contract.revokeDid(did).send())
                 .subscribeOn(Schedulers.boundedElastic())
                 .map(receipt -> ensureTransactionSucceeded(did, "revoke", receipt))
-                .onErrorMap(ex -> containsRevert(ex, REVERT_DID_NOT_FOUND),
+                .onErrorMap(ex -> !(ex instanceof DidNotFoundException)
+                                && containsRevert(ex, REVERT_DID_NOT_FOUND),
                         ex -> new DidNotFoundException(did, ex))
-                .onErrorMap(ex -> containsRevert(ex, REVERT_NOT_OWNER),
+                .onErrorMap(ex -> !(ex instanceof DidOwnershipException)
+                                && containsRevert(ex, REVERT_NOT_OWNER),
                         ex -> new DidOwnershipException(did, ex))
                 .then();
     }
