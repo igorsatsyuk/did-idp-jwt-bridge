@@ -31,7 +31,7 @@ public class Web3jDidRegistryService implements DidRegistryService {
                 .subscribeOn(Schedulers.boundedElastic())
                 .onErrorMap(ex -> containsRevert(ex, REVERT_ALREADY_REGISTERED),
                         ex -> new DidAlreadyRegisteredException(did, ex))
-                .flatMap(receipt -> findByDid(did));
+                .flatMap(ignored -> findByDid(did));
     }
 
     @Override
