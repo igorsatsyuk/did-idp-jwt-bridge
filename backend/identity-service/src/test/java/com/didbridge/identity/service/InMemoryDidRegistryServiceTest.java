@@ -64,7 +64,7 @@ class InMemoryDidRegistryServiceTest {
     @Test
     void revoke_throwsDidNotFoundException_whenNotRegistered() {
         StepVerifier.create(service.revoke(DID))
-                .expectErrorMatches(ex -> ex instanceof DidNotFoundException)
+                .expectErrorMatches(DidNotFoundException.class::isInstance)
                 .verify();
     }
 }

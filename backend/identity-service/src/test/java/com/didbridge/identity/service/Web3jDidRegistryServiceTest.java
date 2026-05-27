@@ -130,7 +130,7 @@ class Web3jDidRegistryServiceTest {
         when(call.send()).thenThrow(new RuntimeException("DID does not exist"));
 
         StepVerifier.create(service.revoke(DID))
-                .expectErrorMatches(ex -> ex instanceof DidNotFoundException)
+                .expectErrorMatches(DidNotFoundException.class::isInstance)
                 .verify();
     }
 
