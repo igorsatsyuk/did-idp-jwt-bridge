@@ -60,12 +60,16 @@
                     <sourceDestination>${project.build.directory}/generated-sources/web3j</sourceDestination>
                     <nativeJavaType>true</nativeJavaType>
                     <outputFormat>java</outputFormat>
-                    <soliditySourceFiles>
-                        <directory>${maven.multiModuleProjectDirectory}/blockchain/contracts</directory>
+                    <!-- Generate from committed ABI (not .sol) so identity-service
+                         builds standalone without access to blockchain/contracts.
+                         To update: run `npm run export:abi` in blockchain/ after
+                         recompiling the contract. -->
+                    <abiSourceFiles>
+                        <directory>${project.basedir}/src/main/resources/abi</directory>
                         <includes>
-                            <include>DidRegistry.sol</include>
+                            <include>**/*.abi</include>
                         </includes>
-                    </soliditySourceFiles>
+                    </abiSourceFiles>
                 </configuration>
             </plugin>
         </plugins>

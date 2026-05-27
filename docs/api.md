@@ -52,7 +52,7 @@ Response 200:
 
 **Network**: Hardhat / private Ethereum (port 8545)  
 **ABI**: `backend/identity-service/src/main/resources/abi/DidRegistry.abi`  
-**Java wrapper**: auto-generated at `target/generated-sources/web3j/com/didbridge/identity/contract/DidRegistry.java`
+**Java wrapper**: auto-generated at `backend/identity-service/target/generated-sources/web3j/com/didbridge/identity/contract/DidRegistry.java`
 
 ### registerDid(string did, string publicKey)
 Registers a new DID on-chain. Emits `DidRegistered`.
