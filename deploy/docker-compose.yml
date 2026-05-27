@@ -6,9 +6,10 @@ services:
     container_name: did-blockchain
     ports:
       - "8545:8545"
+    # Local development only. Never use deterministic mnemonics in production.
     command: >
       --chain.chainId 1337
-      --wallet.mnemonic "test test test test test test test test test test test junk"
+      --wallet.mnemonic "${GANACHE_MNEMONIC:-test test test test test test test test test test test junk}"
       --wallet.totalAccounts 5
       --wallet.defaultBalance 1000
       --miner.blockTime 0
