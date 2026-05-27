@@ -31,14 +31,14 @@ describe("DidRegistry", function () {
     await registry.registerDid("did:example:123", PK.alice);
     const [publicKey, status] = await registry.getDid("did:example:123");
     expect(publicKey).to.equal(PK.alice);
-    expect(status).to.equal(0);
+    expect(status).to.equal(0n);
   });
 
   it("should revoke a DID", async function () {
     await registry.registerDid("did:example:456", PK.bob);
     await registry.revokeDid("did:example:456");
     const [, status] = await registry.getDid("did:example:456");
-    expect(status).to.equal(1);
+    expect(status).to.equal(1n);
   });
 
   it("should not allow duplicate registration", async function () {
