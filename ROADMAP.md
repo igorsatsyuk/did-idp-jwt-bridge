@@ -8,7 +8,7 @@
 
 ## Phase 2 — Backend Services
 
-- [ ] Identity Service: Web3j integration with DidRegistry contract
+- [x] Identity Service: Web3j integration with DidRegistry contract
 - [ ] Auth Bridge: ECDSA signature verification (Ethereum signed message)
 - [ ] Auth Bridge: challenge nonce management (TTL, replay protection)
 - [ ] Resource API: JWT validation wired up with JwtService
