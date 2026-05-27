@@ -133,4 +133,31 @@ class Web3jDidRegistryServiceTest {
                 .expectErrorMatches(ex -> ex instanceof DidNotFoundException)
                 .verify();
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void findByDid_propagatesOtherExceptions() throws Exception {
+        RemoteFunctionCall<Tuple5<String, BigInteger, BigInteger, BigInteger, String>> call =
+                mock(RemoteFunctionCall.class);
+        when(contract.getDid(DID)).thenReturn(call);
+        when(call.send()).thenThrow(new RuntimeException("network error"));
+
+        StepVerifier.create(service.findByDid(DID))
+                .expectErrorMatches(ex -> ex instanceof RuntimeException
+                        && ex.getMessage().equals("network error"))
+                .verify();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void revoke_propagatesOtherExceptions() throws Exception {
+        RemoteFunctionCall<TransactionReceipt> call = mock(RemoteFunctionCall.class);
+        when(contract.revokeDid(DID)).thenReturn(call);
+        when(call.send()).thenThrow(new RuntimeException("network error"));
+
+        StepVerifier.create(service.revoke(DID))
+                .expectErrorMatches(ex -> ex instanceof RuntimeException
+                        && ex.getMessage().equals("network error"))
+                .verify();
+    }
 }
