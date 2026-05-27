@@ -80,11 +80,13 @@ class Web3jDidRegistryServiceTest {
         RemoteFunctionCall<Tuple5<String, BigInteger, BigInteger, BigInteger, String>> call =
                 mock(RemoteFunctionCall.class);
         when(contract.getDid(DID)).thenReturn(call);
-        when(call.send()).thenThrow(new RuntimeException("DID does not exist"));
+        RuntimeException cause = new RuntimeException("DID does not exist");
+        when(call.send()).thenThrow(cause);
 
         StepVerifier.create(service.findByDid(DID))
                 .expectErrorMatches(ex -> ex instanceof DidNotFoundException
-                        && ex.getMessage().contains(DID))
+                        && ex.getMessage().contains(DID)
+                        && ex.getCause() == cause)
                 .verify();
     }
 
@@ -127,10 +129,41 @@ class Web3jDidRegistryServiceTest {
     void revoke_throwsDidNotFoundException_whenContractReverts() throws Exception {
         RemoteFunctionCall<TransactionReceipt> call = mock(RemoteFunctionCall.class);
         when(contract.revokeDid(DID)).thenReturn(call);
-        when(call.send()).thenThrow(new RuntimeException("DID does not exist"));
+        RuntimeException cause = new RuntimeException("DID does not exist");
+        when(call.send()).thenThrow(cause);
 
         StepVerifier.create(service.revoke(DID))
-                .expectErrorMatches(DidNotFoundException.class::isInstance)
+                .expectErrorMatches(ex -> ex instanceof DidNotFoundException && ex.getCause() == cause)
+                .verify();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void register_throwsDidAlreadyRegisteredException_whenContractReverts() throws Exception {
+        RemoteFunctionCall<TransactionReceipt> txCall = mock(RemoteFunctionCall.class);
+        when(contract.registerDid(DID, PUBLIC_KEY)).thenReturn(txCall);
+        RuntimeException cause = new RuntimeException("DID already registered");
+        when(txCall.send()).thenThrow(cause);
+
+        StepVerifier.create(service.register(DID, PUBLIC_KEY))
+                .expectErrorMatches(ex -> ex instanceof DidAlreadyRegisteredException
+                        && ex.getMessage().contains(DID)
+                        && ex.getCause() == cause)
+                .verify();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void revoke_throwsDidOwnershipException_whenNotOwner() throws Exception {
+        RemoteFunctionCall<TransactionReceipt> call = mock(RemoteFunctionCall.class);
+        when(contract.revokeDid(DID)).thenReturn(call);
+        RuntimeException cause = new RuntimeException("Not the DID owner");
+        when(call.send()).thenThrow(cause);
+
+        StepVerifier.create(service.revoke(DID))
+                .expectErrorMatches(ex -> ex instanceof DidOwnershipException
+                        && ex.getMessage().contains(DID)
+                        && ex.getCause() == cause)
                 .verify();
     }
 

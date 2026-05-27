@@ -8,4 +8,8 @@ public class DidNotFoundException extends RuntimeException {
     public DidNotFoundException(String did) {
         super("DID not found: " + did);
     }
+
+    public DidNotFoundException(String did, Throwable cause) {
+        super("DID not found: " + did, cause);
+    }
 }
