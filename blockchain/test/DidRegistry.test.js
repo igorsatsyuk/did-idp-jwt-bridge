@@ -1,9 +1,11 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-// Realistic secp256k1 uncompressed public key fixtures (0x04 + 64 bytes).
-// The contract stores publicKey as a plain string with no on-chain format
-// validation — callers are responsible for providing valid EC keys.
+// Uncompressed secp256k1 public key format: 0x04 prefix byte +
+// x-coordinate (32 bytes) + y-coordinate (32 bytes) = 65 bytes total
+// represented as a hex string: "0x" + 130 hex chars.
+// No on-chain format validation — the contract stores any string;
+// callers are responsible for providing valid EC keys.
 const PK = {
   alice:   "0x04" + "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2" + "c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
   bob:     "0x04" + "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3" + "d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5",
@@ -22,6 +24,7 @@ describe("DidRegistry", function () {
     [owner, other] = await ethers.getSigners();
     const DidRegistry = await ethers.getContractFactory("DidRegistry");
     registry = await DidRegistry.deploy();
+    await registry.waitForDeployment();
   });
 
   it("should register a DID", async function () {
