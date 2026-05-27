@@ -16,3 +16,7 @@ blockchain/typechain-types/
 *.swp
 .DS_Store
 Thumbs.db
+blockchain/coverage/
+blockchain/coverage-js/
+blockchain/coverage.json
+.github/scripts/__pycache__/

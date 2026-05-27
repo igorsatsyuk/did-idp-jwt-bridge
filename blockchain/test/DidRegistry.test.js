@@ -39,4 +39,31 @@ describe("DidRegistry", function () {
       registry.connect(other).revokeDid("did:example:abc")
     ).to.be.revertedWith("Not the DID owner");
   });
+
+  it("isActive should return true for an active DID", async function () {
+    await registry.registerDid("did:example:active", "0xpublickey5");
+    expect(await registry.isActive("did:example:active")).to.equal(true);
+  });
+
+  it("isActive should return false for a revoked DID", async function () {
+    await registry.registerDid("did:example:revoked", "0xpublickey6");
+    await registry.revokeDid("did:example:revoked");
+    expect(await registry.isActive("did:example:revoked")).to.equal(false);
+  });
+
+  it("isActive should return false for a non-existent DID", async function () {
+    expect(await registry.isActive("did:example:nonexistent")).to.equal(false);
+  });
+
+  it("getDid should revert for non-existent DID", async function () {
+    await expect(
+      registry.getDid("did:example:missing")
+    ).to.be.revertedWith("DID does not exist");
+  });
+
+  it("revokeDid should revert for non-existent DID", async function () {
+    await expect(
+      registry.revokeDid("did:example:missing")
+    ).to.be.revertedWith("DID does not exist");
+  });
 });

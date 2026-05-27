@@ -4,7 +4,7 @@
 
 - [x] Repository initialization and Maven multi-module structure
 - [x] Blockchain environment (Hardhat + Ganache node on port 8545)
-- [ ] DidRegistry smart contract (register, revoke, isActive)
+- [x] DidRegistry smart contract (register, revoke, isActive)
 
 ## Phase 2 — Backend Services
 
