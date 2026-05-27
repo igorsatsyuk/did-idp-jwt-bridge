@@ -60,7 +60,7 @@ Registers a new DID on-chain. Emits `DidRegistered`.
 | Param | Type | Description |
 |-------|------|-------------|
 | `did` | string | Fully-qualified DID string, e.g. `did:example:alice` |
-| `publicKey` | string | Hex-encoded secp256k1 public key, e.g. `0x04...` |
+| `publicKey` | string | Hex-encoded secp256k1 public key, e.g. `0x04...` (uncompressed, 65 bytes). **No format validation on-chain** — the contract stores any string; callers must ensure the key is a valid EC public key before registration. |
 
 Reverts with `"DID already registered"` if the DID exists.
 
