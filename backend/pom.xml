@@ -28,7 +28,7 @@
 
     <properties>
         <java.version>25</java.version>
-        <web3j.version>4.12.2</web3j.version>
+        <web3j.version>4.12.3</web3j.version>
         <jjwt.version>0.12.6</jjwt.version>
     </properties>
 
@@ -74,6 +74,11 @@
                     <groupId>org.sonarsource.scanner.maven</groupId>
                     <artifactId>sonar-maven-plugin</artifactId>
                     <version>5.1.0.4751</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.web3j</groupId>
+                    <artifactId>web3j-maven-plugin</artifactId>
+                    <version>${web3j.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.jacoco</groupId>

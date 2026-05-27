@@ -44,6 +44,34 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.web3j</groupId>
+                <artifactId>web3j-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-did-registry-wrapper</id>
+                        <goals>
+                            <goal>generate-sources</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <packageName>com.didbridge.identity.contract</packageName>
+                    <sourceDestination>${project.build.directory}/generated-sources/web3j</sourceDestination>
+                    <nativeJavaType>true</nativeJavaType>
+                    <outputFormat>java</outputFormat>
+                    <!-- Generate from committed ABI (not .sol) so identity-service
+                         builds standalone without access to blockchain/contracts.
+                         To update: run `npm run export:abi` in blockchain/ after
+                         recompiling the contract. -->
+                    <abiSourceFiles>
+                        <directory>${project.basedir}/src/main/resources/abi</directory>
+                        <includes>
+                            <include>**/*.abi</include>
+                        </includes>
+                    </abiSourceFiles>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

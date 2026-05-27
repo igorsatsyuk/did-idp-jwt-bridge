@@ -8,6 +8,7 @@
     "coverage": "hardhat coverage",
     "coverage:js": "c8 --reporter=lcov --report-dir=coverage-js node --test test-js/deploy.test.js",
     "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "export:abi": "node -e \"const fs=require('fs');const a=require('./artifacts/contracts/DidRegistry.sol/DidRegistry.json');fs.mkdirSync('../backend/identity-service/src/main/resources/abi',{recursive:true});fs.writeFileSync('../backend/identity-service/src/main/resources/abi/DidRegistry.abi',JSON.stringify(a.abi,null,2));console.log('ABI exported')\"",
     "node": "hardhat node"
   },
   "devDependencies": {
