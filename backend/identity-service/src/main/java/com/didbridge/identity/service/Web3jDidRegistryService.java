@@ -4,7 +4,6 @@ import com.didbridge.identity.contract.DidRegistry;
 import com.didbridge.model.DidDocument;
 import com.didbridge.model.DidStatus;
 import org.springframework.stereotype.Service;
-import org.web3j.protocol.core.RemoteFunctionCall;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tuples.generated.Tuple5;
 import reactor.core.publisher.Mono;

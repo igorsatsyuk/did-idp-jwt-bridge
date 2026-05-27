@@ -24,6 +24,13 @@ class BlockchainConfigTest {
     }
 
     @Test
+    void didRegistry_throwsWhenPrivateKeyInvalid() {
+        assertThatThrownBy(() -> config.didRegistry(mock(Web3j.class), VALID_ADDRESS, "invalid-private-key"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("blockchain.account-private-key must be a valid Ethereum private key");
+    }
+
+    @Test
     void didRegistry_throwsWhenContractAddressIsInvalid() {
         assertThatThrownBy(() -> config.didRegistry(mock(Web3j.class), "0x1234", VALID_PRIVATE_KEY))
                 .isInstanceOf(IllegalStateException.class)
