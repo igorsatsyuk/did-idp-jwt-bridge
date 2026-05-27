@@ -30,6 +30,8 @@ public class Web3jDidRegistryService implements DidRegistryService {
     public Mono<DidDocument> register(String did, String publicKey) {
         return Mono.fromCallable(() -> contract.registerDid(did, publicKey).send())
                 .subscribeOn(Schedulers.boundedElastic())
+                .switchIfEmpty(Mono.error(new IllegalStateException(
+                        "Blockchain transaction returned no receipt for DID: " + did)))
                 .map(receipt -> ensureTransactionSucceeded(did, "register", receipt))
                 .onErrorMap(ex -> !(ex instanceof DidAlreadyRegisteredException)
                                 && containsRevert(ex, REVERT_ALREADY_REGISTERED),
@@ -50,6 +52,8 @@ public class Web3jDidRegistryService implements DidRegistryService {
     public Mono<Void> revoke(String did) {
         return Mono.fromCallable(() -> contract.revokeDid(did).send())
                 .subscribeOn(Schedulers.boundedElastic())
+                .switchIfEmpty(Mono.error(new IllegalStateException(
+                        "Blockchain transaction returned no receipt for DID: " + did)))
                 .map(receipt -> ensureTransactionSucceeded(did, "revoke", receipt))
                 .onErrorMap(ex -> !(ex instanceof DidNotFoundException)
                                 && containsRevert(ex, REVERT_DID_NOT_FOUND),

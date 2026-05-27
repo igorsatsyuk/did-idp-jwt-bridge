@@ -243,6 +243,19 @@ class Web3jDidRegistryServiceTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void register_throwsIllegalStateException_whenTransactionReceiptIsNull() throws Exception {
+        RemoteFunctionCall<TransactionReceipt> txCall = mock(RemoteFunctionCall.class);
+        when(contract.registerDid(DID, PUBLIC_KEY)).thenReturn(txCall);
+        when(txCall.send()).thenReturn(null);
+
+        StepVerifier.create(service.register(DID, PUBLIC_KEY))
+                .expectErrorMatches(ex -> ex instanceof IllegalStateException
+                        && ex.getMessage().contains("no receipt"))
+                .verify();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void revoke_throwsDidOwnershipException_whenNotOwner() throws Exception {
         RemoteFunctionCall<TransactionReceipt> call = mock(RemoteFunctionCall.class);
         when(contract.revokeDid(DID)).thenReturn(call);
@@ -328,6 +341,19 @@ class Web3jDidRegistryServiceTest {
 
         StepVerifier.create(service.revoke(DID))
                 .expectErrorMatches(DidOwnershipException.class::isInstance)
+                .verify();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void revoke_throwsIllegalStateException_whenTransactionReceiptIsNull() throws Exception {
+        RemoteFunctionCall<TransactionReceipt> call = mock(RemoteFunctionCall.class);
+        when(contract.revokeDid(DID)).thenReturn(call);
+        when(call.send()).thenReturn(null);
+
+        StepVerifier.create(service.revoke(DID))
+                .expectErrorMatches(ex -> ex instanceof IllegalStateException
+                        && ex.getMessage().contains("no receipt"))
                 .verify();
     }
 }
