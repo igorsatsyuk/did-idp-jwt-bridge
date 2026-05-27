@@ -148,6 +148,7 @@ jobs:
         if: steps.sonar-check.outputs.sonar_enabled == 'true'
         shell: bash
         env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           REPO_NAME: ${{ github.event.repository.name }}
           EVENT_NAME: ${{ github.event_name }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -293,21 +294,26 @@ jobs:
             echo "No lcov.info reports found; Sonar will run without coverage input"
           fi
 
+      - name: Build blockchain Sonar args
+        if: steps.sonar-check.outputs.sonar_enabled == 'true'
+        id: sonar-args
+        shell: bash
+        run: |
+          args="-Dsonar.projectKey=${{ github.event.repository.name }}-blockchain"
+          if [ -n "${SONAR_ORGANIZATION}" ]; then
+            args="${args} -Dsonar.organization=${SONAR_ORGANIZATION}"
+          fi
+          echo "args=${args}" >> "$GITHUB_OUTPUT"
+
       - name: Run SonarQube analysis (blockchain)
         if: steps.sonar-check.outputs.sonar_enabled == 'true'
         uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8
         env:
           SONAR_HOST_URL: ${{ vars.SONAR_URL || 'https://sonarcloud.io' }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           projectBaseDir: blockchain
-          args: >
-            -Dsonar.projectKey=${{ github.event.repository.name }}-blockchain
-            -Dsonar.sources=contracts,scripts
-            -Dsonar.tests=test,test-js
-            -Dsonar.exclusions=node_modules/**,artifacts/**,cache/**
-            -Dsonar.coverage.exclusions=contracts/**
-            -Dsonar.javascript.lcov.reportPaths=coverage-js/lcov.info
-            ${{ vars.SONAR_ORGANIZATION != '' && format('-Dsonar.organization={0}', vars.SONAR_ORGANIZATION) || '' }}
+          args: ${{ steps.sonar-args.outputs.args }}
 
       - name: Wait for Quality Gate and publish blockchain Sonar summary
         if: steps.sonar-check.outputs.sonar_enabled == 'true'
