@@ -107,12 +107,6 @@ def detect_analysis_scope() -> tuple[str | None, str | None]:
 
 def to_measure_map(payload: dict) -> dict[str, str]:
     component = payload.get("component", {})
-    # Build a period index: period index -> period value (for new_* metrics)
-    periods: dict[int, str] = {}
-    for period in component.get("periods", []):
-        idx = period.get("index")
-        if idx is not None:
-            periods[idx] = period.get("value", "-")
 
     result: dict[str, str] = {}
     for measure in component.get("measures", []):

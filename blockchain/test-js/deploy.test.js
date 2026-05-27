@@ -2,7 +2,7 @@
 
 const assert = require("node:assert/strict");
 const { describe, it } = require("node:test");
-const { main } = require("../scripts/deploy.js");
+const { main } = require("../scripts/deploy-main");
 
 describe("deploy script", { concurrency: false }, () => {
   it("deploys and logs contract address without errors", async () => {
