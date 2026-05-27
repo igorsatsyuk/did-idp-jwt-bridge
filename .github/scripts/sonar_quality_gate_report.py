@@ -81,6 +81,7 @@ def build_measures_url(host_url: str, project_key: str, pull_request: str | None
     query = {
         "component": project_key,
         "metricKeys": metric_keys,
+        "additionalFields": "periods",
     }
     if pull_request:
         query["pullRequest"] = pull_request
@@ -106,9 +107,25 @@ def detect_analysis_scope() -> tuple[str | None, str | None]:
 
 def to_measure_map(payload: dict) -> dict[str, str]:
     component = payload.get("component", {})
+    # Build a period index: period index -> period value (for new_* metrics)
+    periods: dict[int, str] = {}
+    for period in component.get("periods", []):
+        idx = period.get("index")
+        if idx is not None:
+            periods[idx] = period.get("value", "-")
+
     result: dict[str, str] = {}
     for measure in component.get("measures", []):
-        result[measure.get("metric")] = measure.get("value", "-")
+        metric = measure.get("metric", "")
+        value = measure.get("value")
+        if value is None and metric.startswith("new_"):
+            # new_* values come inside the periods list of the measure itself
+            measure_periods = measure.get("periods") or measure.get("period")
+            if isinstance(measure_periods, list) and measure_periods:
+                value = measure_periods[0].get("value")
+            elif isinstance(measure_periods, dict):
+                value = measure_periods.get("value")
+        result[metric] = value if value is not None else "-"
     return result
 
 
