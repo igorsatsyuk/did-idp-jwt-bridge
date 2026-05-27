@@ -1,0 +1,355 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+
+  backend:
+    name: Backend (Maven)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+          cache: maven
+
+      - name: Run backend tests
+        run: mvn -B -ntp -f backend/pom.xml verify
+
+      - name: Upload backend JaCoCo reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jacoco-reports
+          path: backend/**/target/site/jacoco/jacoco.xml
+          if-no-files-found: warn
+          retention-days: 7
+
+  blockchain:
+    name: Blockchain (Hardhat)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: blockchain/package-lock.json
+
+      - name: Install dependencies
+        working-directory: blockchain
+        run: npm ci --ignore-scripts
+
+      - name: Compile contracts
+        working-directory: blockchain
+        run: npm run compile
+
+      - name: Run Hardhat coverage
+        working-directory: blockchain
+        run: npm run coverage
+
+      - name: Run JavaScript coverage for deploy scripts
+        working-directory: blockchain
+        run: npm run coverage:js
+
+      - name: Upload blockchain coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blockchain-coverage
+          path: |
+            blockchain/coverage/lcov.info
+            blockchain/coverage-js/lcov.info
+          if-no-files-found: warn
+          retention-days: 7
+
+  sonar-backend:
+    name: SonarQube - backend
+    runs-on: ubuntu-latest
+    needs: [ backend ]
+    if: >
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'))
+    outputs:
+      sonar_skipped: ${{ steps.sonar-check.outputs.sonar_skipped }}
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ vars.SONAR_URL }}
+      SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check Sonar configuration
+        id: sonar-check
+        run: |
+          if [ -z "$SONAR_TOKEN" ]; then
+            echo "sonar_skipped=true" >> $GITHUB_OUTPUT
+            echo "SONAR_TOKEN not set; skipping backend analysis"
+            exit 0
+          fi
+          host_url="${SONAR_HOST_URL:-https://sonarcloud.io}"
+          if [ "$host_url" = "https://sonarcloud.io" ] && [ -z "$SONAR_ORGANIZATION" ]; then
+            echo "sonar_skipped=true" >> $GITHUB_OUTPUT
+            echo "SONAR_ORGANIZATION not set for SonarCloud; skipping backend analysis"
+            exit 0
+          fi
+          echo "sonar_skipped=false" >> $GITHUB_OUTPUT
+          echo "sonar_enabled=true" >> $GITHUB_OUTPUT
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_URL }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+
+      - name: Set up JDK 25
+        if: steps.sonar-check.outputs.sonar_enabled == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+          cache: maven
+
+      - name: Download backend JaCoCo reports
+        if: steps.sonar-check.outputs.sonar_enabled == 'true'
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-jacoco-reports
+          path: backend-coverage
+
+      - name: Run SonarQube analysis (backend)
+        if: steps.sonar-check.outputs.sonar_enabled == 'true'
+        shell: bash
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_REF: ${{ github.head_ref }}
+          PR_BASE_REF: ${{ github.base_ref }}
+        run: |
+          host_url="${SONAR_HOST_URL:-https://sonarcloud.io}"
+          report_paths=""
+          if [ -d "backend-coverage" ]; then
+            report_paths=$(find "$(pwd)/backend-coverage" -type f -name "jacoco.xml" -print 2>/dev/null | paste -sd, - || true)
+          fi
+          cmd=(
+            mvn -B -ntp
+            -f backend/pom.xml
+            -Djacoco.skip=true
+            -DskipTests
+            verify
+            sonar:sonar
+            "-Dsonar.host.url=${host_url}"
+            "-Dsonar.projectKey=${REPO_NAME}-backend"
+            "-Dsonar.token=${SONAR_TOKEN}"
+          )
+
+          if [ -n "${report_paths}" ]; then
+            cmd+=("-Dsonar.coverage.jacoco.xmlReportPaths=${report_paths}")
+          else
+            echo "JaCoCo XML reports not found; Sonar will run without coverage input"
+          fi
+
+          if [ -n "${SONAR_ORGANIZATION}" ]; then
+            cmd+=("-Dsonar.organization=${SONAR_ORGANIZATION}")
+          fi
+
+          if [ "${EVENT_NAME}" = "pull_request" ] && [ -n "${PR_NUMBER}" ] && [ -n "${PR_HEAD_REF}" ] && [ -n "${PR_BASE_REF}" ]; then
+            cmd+=("-Dsonar.pullrequest.key=${PR_NUMBER}")
+            cmd+=("-Dsonar.pullrequest.branch=${PR_HEAD_REF}")
+            cmd+=("-Dsonar.pullrequest.base=${PR_BASE_REF}")
+          fi
+
+          "${cmd[@]}"
+
+      - name: Locate backend Sonar report-task
+        if: steps.sonar-check.outputs.sonar_enabled == 'true'
+        id: report-task
+        shell: bash
+        run: |
+          report_task=$(find backend -type f \( -path "*/target/sonar/report-task.txt" -o -path "*/.scannerwork/report-task.txt" \) | head -1)
+          if [ -z "$report_task" ]; then
+            echo "Unable to find backend Sonar report-task.txt" >&2
+            exit 1
+          fi
+          echo "path=${report_task}" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for Quality Gate and publish backend Sonar summary
+        if: steps.sonar-check.outputs.sonar_enabled == 'true'
+        shell: bash
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          extra_args=()
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            extra_args+=("--allow-missing-new-code-metrics")
+          fi
+
+          python3 .github/scripts/sonar_quality_gate_report.py \
+            --component-name "backend" \
+            --project-key "${REPO_NAME}-backend" \
+            --report-task-file "${{ steps.report-task.outputs.path }}" \
+            --timeout-seconds 900 \
+            "${extra_args[@]}"
+
+  sonar-blockchain:
+    name: SonarQube - blockchain
+    runs-on: ubuntu-latest
+    needs: [ blockchain ]
+    if: >
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'))
+    outputs:
+      sonar_skipped: ${{ steps.sonar-check.outputs.sonar_skipped }}
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ vars.SONAR_URL }}
+      SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check Sonar configuration
+        id: sonar-check
+        run: |
+          if [ -z "$SONAR_TOKEN" ]; then
+            echo "sonar_skipped=true" >> $GITHUB_OUTPUT
+            echo "SONAR_TOKEN not set; skipping blockchain analysis"
+            exit 0
+          fi
+          host_url="${SONAR_HOST_URL:-https://sonarcloud.io}"
+          if [ "$host_url" = "https://sonarcloud.io" ] && [ -z "$SONAR_ORGANIZATION" ]; then
+            echo "sonar_skipped=true" >> $GITHUB_OUTPUT
+            echo "SONAR_ORGANIZATION not set for SonarCloud; skipping blockchain analysis"
+            exit 0
+          fi
+          echo "sonar_skipped=false" >> $GITHUB_OUTPUT
+          echo "sonar_enabled=true" >> $GITHUB_OUTPUT
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_URL }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+
+      - name: Download blockchain coverage report
+        if: steps.sonar-check.outputs.sonar_enabled == 'true'
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: blockchain-coverage
+          path: .
+
+      - name: Normalize blockchain lcov path for Sonar
+        if: steps.sonar-check.outputs.sonar_enabled == 'true'
+        shell: bash
+        run: |
+          expected_sol="blockchain/coverage/lcov.info"
+          found_sol=$(find . -path "*/coverage/lcov.info" 2>/dev/null | head -1 || true)
+          found_sol=${found_sol#./}
+          if [ -n "$found_sol" ] && [ "$found_sol" != "$expected_sol" ]; then
+            mkdir -p "$(dirname "$expected_sol")"
+            cp "$found_sol" "$expected_sol"
+            echo "Reorganized Solidity lcov: $found_sol -> $expected_sol"
+          fi
+
+          expected_js="blockchain/coverage-js/lcov.info"
+          found_js=$(find . -path "*/coverage-js/lcov.info" 2>/dev/null | head -1 || true)
+          found_js=${found_js#./}
+          if [ -n "$found_js" ] && [ "$found_js" != "$expected_js" ]; then
+            mkdir -p "$(dirname "$expected_js")"
+            cp "$found_js" "$expected_js"
+            echo "Reorganized JS lcov: $found_js -> $expected_js"
+          fi
+
+          if [ ! -f "$expected_sol" ] && [ ! -f "$expected_js" ]; then
+            echo "No lcov.info reports found; Sonar will run without coverage input"
+          fi
+
+      - name: Run SonarQube analysis (blockchain)
+        if: steps.sonar-check.outputs.sonar_enabled == 'true'
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_HOST_URL: ${{ vars.SONAR_URL || 'https://sonarcloud.io' }}
+        with:
+          projectBaseDir: blockchain
+          args: >
+            -Dsonar.projectKey=${{ github.event.repository.name }}-blockchain
+            -Dsonar.sources=contracts,scripts
+            -Dsonar.tests=test
+            -Dsonar.exclusions=node_modules/**,artifacts/**,cache/**
+            -Dsonar.coverage.exclusions=contracts/**,scripts/deploy.js
+            -Dsonar.javascript.lcov.reportPaths=coverage-js/lcov.info,coverage/lcov.info
+            ${{ vars.SONAR_ORGANIZATION != '' && format('-Dsonar.organization={0}', vars.SONAR_ORGANIZATION) || '' }}
+
+      - name: Wait for Quality Gate and publish blockchain Sonar summary
+        if: steps.sonar-check.outputs.sonar_enabled == 'true'
+        shell: bash
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          report_task="blockchain/.scannerwork/report-task.txt"
+          if [ ! -f "$report_task" ]; then
+            echo "Unable to find blockchain Sonar report-task.txt at $report_task" >&2
+            exit 1
+          fi
+          python3 .github/scripts/sonar_quality_gate_report.py \
+            --component-name "blockchain" \
+            --project-key "${REPO_NAME}-blockchain" \
+            --report-task-file "$report_task" \
+            --timeout-seconds 900
+
+  notify-telegram:
+    name: Notify Telegram
+    runs-on: ubuntu-latest
+    needs: [ backend, blockchain, sonar-backend, sonar-blockchain ]
+    if: ${{ always() }}
+    permissions:
+      contents: read
+    env:
+      TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
+      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compose Telegram message
+        id: compose
+        run: python3 .github/scripts/compose_telegram_message.py
+        env:
+          BACKEND_RESULT: ${{ needs.backend.result }}
+          BLOCKCHAIN_RESULT: ${{ needs.blockchain.result }}
+          SONAR_BACKEND_RESULT: ${{ needs.sonar-backend.result }}
+          SONAR_BLOCKCHAIN_RESULT: ${{ needs.sonar-blockchain.result }}
+          SONAR_BACKEND_SKIPPED: ${{ needs.sonar-backend.outputs.sonar_skipped }}
+          SONAR_BLOCKCHAIN_SKIPPED: ${{ needs.sonar-blockchain.outputs.sonar_skipped }}
+
+      - name: Notify Telegram
+        if: ${{ env.TELEGRAM_TO != '' && env.TELEGRAM_TOKEN != '' }}
+        uses: appleboy/telegram-action@v1.0.1
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: ${{ steps.compose.outputs.message }}
+          format: html
+
+      - name: Telegram skipped (missing secrets)
+        if: ${{ env.TELEGRAM_TO == '' || env.TELEGRAM_TOKEN == '' }}
+        run: echo "TELEGRAM_TO and/or TELEGRAM_TOKEN are not set. Skipping Telegram notification."
+
