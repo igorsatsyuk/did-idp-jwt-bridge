@@ -13,7 +13,7 @@ import org.web3j.tx.gas.DefaultGasProvider;
 @Configuration
 public class BlockchainConfig {
 
-    @Bean
+    @Bean(destroyMethod = "shutdown")
     public Web3j web3j(@Value("${blockchain.rpc-url}") String rpcUrl) {
         return Web3j.build(new HttpService(rpcUrl));
     }
