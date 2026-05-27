@@ -302,7 +302,7 @@ jobs:
             -Dsonar.tests=test,test-js
             -Dsonar.exclusions=node_modules/**,artifacts/**,cache/**
             -Dsonar.coverage.exclusions=contracts/**,scripts/deploy.js
-            -Dsonar.javascript.lcov.reportPaths=coverage-js/lcov.info,coverage/lcov.info
+            -Dsonar.javascript.lcov.reportPaths=coverage-js/lcov.info
             ${{ vars.SONAR_ORGANIZATION != '' && format('-Dsonar.organization={0}', vars.SONAR_ORGANIZATION) || '' }}
 
       - name: Wait for Quality Gate and publish blockchain Sonar summary

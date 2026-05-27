@@ -1,5 +1,8 @@
 require("@nomicfoundation/hardhat-toolbox");
-require("solidity-coverage");
+
+if (process.argv.includes("coverage")) {
+  require("solidity-coverage");
+}
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {

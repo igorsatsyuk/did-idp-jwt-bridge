@@ -1,16 +1,19 @@
-const hre = require("hardhat");
-
-async function main() {
-  console.log("Deploying DidRegistry...");
-  const DidRegistry = await hre.ethers.getContractFactory("DidRegistry");
+async function main(runtime = require("hardhat"), logger = console) {
+  logger.log("Deploying DidRegistry...");
+  const DidRegistry = await runtime.ethers.getContractFactory("DidRegistry");
   const registry = await DidRegistry.deploy();
   await registry.waitForDeployment();
   const address = await registry.getAddress();
-  console.log(`DidRegistry deployed to: ${address}`);
-  console.log(`\nAdd to your .env:\nDID_REGISTRY_ADDRESS=${address}`);
+  logger.log(`DidRegistry deployed to: ${address}`);
+  logger.log(`\nAdd to your .env:\nDID_REGISTRY_ADDRESS=${address}`);
+  return address;
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { main };
