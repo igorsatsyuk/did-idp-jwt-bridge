@@ -53,4 +53,14 @@ class BlockchainConfigTest {
 
         assertThat(registry).isNotNull();
     }
+
+    @Test
+    void didRegistry_acceptsContractAddressWithWhitespace() {
+        DidRegistry registry = config.didRegistry(
+                mock(Web3j.class),
+                "  " + VALID_ADDRESS + "  ",
+                VALID_PRIVATE_KEY);
+
+        assertThat(registry).isNotNull();
+    }
 }

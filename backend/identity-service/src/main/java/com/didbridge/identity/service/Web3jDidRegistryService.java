@@ -125,7 +125,7 @@ public class Web3jDidRegistryService implements DidRegistryService {
     private static boolean containsRevert(Throwable ex, String revertReason) {
         Throwable cause = ex;
         while (cause != null) {
-            if (cause.getMessage() != null && cause.getMessage().contains(revertReason)) {
+            if (revertReasonMatches(cause.getMessage(), revertReason)) {
                 return true;
             }
             cause = cause.getCause();

@@ -115,6 +115,22 @@ class Web3jDidRegistryServiceTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void findByDid_throwsDidNotFoundException_whenContractRevertReasonHasDifferentCase() throws Exception {
+        RemoteFunctionCall<Tuple5<String, BigInteger, BigInteger, BigInteger, String>> call =
+                mock(RemoteFunctionCall.class);
+        when(contract.getDid(DID)).thenReturn(call);
+        RuntimeException cause = new RuntimeException("execution reverted: did DOES NOT exist");
+        when(call.send()).thenThrow(cause);
+
+        StepVerifier.create(service.findByDid(DID))
+                .expectErrorMatches(ex -> ex instanceof DidNotFoundException
+                        && ex.getMessage().contains(DID)
+                        && ex.getCause() == cause)
+                .verify();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void register_callsContractAndReturnsDid() throws Exception {
         TransactionReceipt receipt = mock(TransactionReceipt.class);
         when(receipt.getStatus()).thenReturn("0x1");

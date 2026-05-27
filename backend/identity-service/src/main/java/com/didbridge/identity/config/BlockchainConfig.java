@@ -23,14 +23,15 @@ public class BlockchainConfig {
             Web3j web3j,
             @Value("${blockchain.contract-address}") String contractAddress,
             @Value("${blockchain.account-private-key}") String privateKey) {
+        String normalizedContractAddress = contractAddress == null ? null : contractAddress.trim();
         if (!StringUtils.hasText(privateKey)) {
             throw new IllegalStateException(
                     "blockchain.account-private-key must be set "
                             + "(e.g. via BLOCKCHAIN_ACCOUNT_PRIVATE_KEY or BLOCKCHAIN_PRIVATE_KEY env var)");
         }
-        if (!StringUtils.hasText(contractAddress)
-                || !contractAddress.matches("0x[0-9a-fA-F]{40}")
-                || contractAddress.matches("0x0{40}")) {
+        if (!StringUtils.hasText(normalizedContractAddress)
+                || !normalizedContractAddress.matches("0x[0-9a-fA-F]{40}")
+                || normalizedContractAddress.matches("0x0{40}")) {
             throw new IllegalStateException(
                     "blockchain.contract-address must be a valid Ethereum address (e.g. via DID_REGISTRY_ADDRESS env var)");
         }
@@ -44,6 +45,6 @@ public class BlockchainConfig {
                             + "(e.g. via BLOCKCHAIN_ACCOUNT_PRIVATE_KEY or BLOCKCHAIN_PRIVATE_KEY env var)",
                     ex);
         }
-        return DidRegistry.load(contractAddress, web3j, credentials, new DefaultGasProvider());
+        return DidRegistry.load(normalizedContractAddress, web3j, credentials, new DefaultGasProvider());
     }
 }
