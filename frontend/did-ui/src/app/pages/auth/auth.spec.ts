@@ -81,6 +81,17 @@ describe('Auth', () => {
     expect(component.successMessage).toContain('Challenge signed');
   });
 
+  it('handles invalid private key without getting stuck in signing state', () => {
+    component.authForm.patchValue({ did: DID, privateKey: 'invalid-private-key' });
+    component.challenge = CHALLENGE;
+
+    component.signChallenge();
+
+    expect(component.isSigningChallenge).toBe(false);
+    expect(component.signature).toBeNull();
+    expect(component.errorMessage).toBeTruthy();
+  });
+
   it('shows sign error when wallet signing fails', async () => {
     component.authForm.patchValue({ did: DID, privateKey: PRIVATE_KEY });
     component.challenge = CHALLENGE;

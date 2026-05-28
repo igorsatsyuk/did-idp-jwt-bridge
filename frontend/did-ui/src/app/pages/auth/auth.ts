@@ -84,8 +84,16 @@ export class Auth {
     this.errorMessage = null;
     this.successMessage = null;
 
-    new Wallet(privateKey)
-      .signMessage(this.challenge)
+    let signingPromise: Promise<string>;
+    try {
+      signingPromise = new Wallet(privateKey).signMessage(this.challenge);
+    } catch (error: unknown) {
+      this.errorMessage = this.formatRuntimeError(error, 'Failed to sign challenge');
+      this.isSigningChallenge = false;
+      return;
+    }
+
+    signingPromise
       .then((signature) => {
         this.signature = signature;
         this.successMessage = 'Challenge signed. Exchange signature for JWT.';
