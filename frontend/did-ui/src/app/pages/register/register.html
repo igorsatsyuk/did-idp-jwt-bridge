@@ -31,6 +31,25 @@
         </mat-error>
       </mat-form-field>
 
+      <div *ngIf="generatedPrivateKey" class="key-backup">
+        <p class="backup-title">Private key backup (save it before registration)</p>
+        <mat-form-field appearance="outline">
+          <mat-label>Private key</mat-label>
+          <textarea matInput rows="3" [value]="generatedPrivateKey" readonly></textarea>
+        </mat-form-field>
+        <p class="backup-note">
+          The key is also saved in this browser session for follow-up auth flow. Export it to a secure password manager
+          or wallet backup now.
+        </p>
+      </div>
+
+      <mat-checkbox formControlName="backupConfirmed">
+        I have securely backed up the generated private key.
+      </mat-checkbox>
+      <p *ngIf="registerForm.controls.backupConfirmed.touched && registerForm.controls.backupConfirmed.invalid" class="checkbox-error">
+        Confirm private key backup before registration.
+      </p>
+
       <button mat-raised-button color="primary" type="submit" [disabled]="isSubmitting || registerForm.invalid">
         Register DID
       </button>

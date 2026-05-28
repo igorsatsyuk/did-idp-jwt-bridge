@@ -18,6 +18,27 @@ mat-form-field {
   width: 100%;
 }
 
+.key-backup {
+  margin-top: 0.5rem;
+}
+
+.backup-title {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+
+.backup-note {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #37474f;
+}
+
+.checkbox-error {
+  margin: 0;
+  color: #b71c1c;
+  font-size: 0.9rem;
+}
+
 .feedback {
   margin-top: 1rem;
 }

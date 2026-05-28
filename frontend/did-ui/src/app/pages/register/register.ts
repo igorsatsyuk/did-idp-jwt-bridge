@@ -4,6 +4,7 @@ import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Wallet } from 'ethers';
@@ -13,23 +14,34 @@ import { Api, DidDocument, RegisterDidRequest } from '../../core/api';
 
 @Component({
   selector: 'app-register',
-  imports: [MatCardModule, MatButtonModule, MatFormFieldModule, MatInputModule, ReactiveFormsModule, NgIf],
+  imports: [
+    MatCardModule,
+    MatButtonModule,
+    MatCheckboxModule,
+    MatFormFieldModule,
+    MatInputModule,
+    ReactiveFormsModule,
+    NgIf
+  ],
   templateUrl: './register.html',
   styleUrl: './register.scss'
 })
 export class Register {
+  private static readonly SESSION_WALLET_KEY = 'did-ui.generated-wallet';
   private readonly formBuilder = inject(FormBuilder);
   private readonly api = inject(Api);
 
   readonly registerForm = this.formBuilder.nonNullable.group({
     did: ['', [Validators.required]],
-    publicKey: ['', [Validators.required]]
+    publicKey: ['', [Validators.required]],
+    backupConfirmed: [false, [Validators.requiredTrue]]
   });
 
   isSubmitting = false;
   successMessage: string | null = null;
   errorMessage: string | null = null;
   registeredDid: DidDocument | null = null;
+  generatedPrivateKey: string | null = null;
 
   generateKeyPair(): void {
     const wallet = Wallet.createRandom();
@@ -37,8 +49,19 @@ export class Register {
 
     this.registerForm.setValue({
       did,
-      publicKey: wallet.signingKey.publicKey
+      publicKey: wallet.signingKey.publicKey,
+      backupConfirmed: false
     });
+    this.generatedPrivateKey = wallet.privateKey;
+    sessionStorage.setItem(
+      Register.SESSION_WALLET_KEY,
+      JSON.stringify({
+        did,
+        address: wallet.address.toLowerCase(),
+        publicKey: wallet.signingKey.publicKey,
+        privateKey: wallet.privateKey
+      })
+    );
 
     this.successMessage = null;
     this.errorMessage = null;
@@ -56,7 +79,11 @@ export class Register {
     this.errorMessage = null;
     this.registeredDid = null;
 
-    const payload: RegisterDidRequest = this.registerForm.getRawValue();
+    const formValue = this.registerForm.getRawValue();
+    const payload: RegisterDidRequest = {
+      did: formValue.did,
+      publicKey: formValue.publicKey
+    };
     this.api
       .registerDid(payload)
       .pipe(finalize(() => (this.isSubmitting = false)))
