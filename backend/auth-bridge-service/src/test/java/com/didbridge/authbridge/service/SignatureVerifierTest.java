@@ -2,10 +2,12 @@ package com.didbridge.authbridge.service;
 
 import org.junit.jupiter.api.Test;
 import org.web3j.crypto.ECKeyPair;
+import org.web3j.crypto.Keys;
 import org.web3j.crypto.Sign;
 import org.web3j.utils.Numeric;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -71,11 +73,51 @@ class SignatureVerifierTest {
     void verify_acceptsExpectedEthereumAddress() {
         ECKeyPair keyPair = ECKeyPair.create(PRIVATE_KEY);
         String message = "challenge-123";
-        Sign.SignatureData sig = Sign.signPrefixedMessage(message.getBytes(), keyPair);
+        Sign.SignatureData sig = Sign.signPrefixedMessage(message.getBytes(StandardCharsets.UTF_8), keyPair);
         String signatureHex = toSignatureHex(sig);
-        String expectedAddress = "0x" + org.web3j.crypto.Keys.getAddress(keyPair.getPublicKey());
+        String expectedAddress = "0x" + Keys.getAddress(keyPair.getPublicKey());
 
         assertThat(verifier.verify(message, signatureHex, expectedAddress)).isTrue();
+    }
+
+    @Test
+    void verify_acceptsUncompressedPublicKeyWith04Prefix() {
+        ECKeyPair keyPair = ECKeyPair.create(PRIVATE_KEY);
+        String message = "challenge-123";
+        Sign.SignatureData sig = Sign.signPrefixedMessage(message.getBytes(StandardCharsets.UTF_8), keyPair);
+        String signatureHex = toSignatureHex(sig);
+        String xAndY = Numeric.toHexStringNoPrefixZeroPadded(keyPair.getPublicKey(), 128);
+        String expectedUncompressed = "0x04" + xAndY;
+
+        assertThat(verifier.verify(message, signatureHex, expectedUncompressed)).isTrue();
+    }
+
+    @Test
+    void verify_acceptsRecoveryIdInRangeZeroOne() {
+        ECKeyPair keyPair = ECKeyPair.create(PRIVATE_KEY);
+        String message = "challenge-123";
+        Sign.SignatureData sig = Sign.signPrefixedMessage(message.getBytes(StandardCharsets.UTF_8), keyPair);
+        byte[] bytes = signatureToBytes(sig);
+        bytes[64] = (byte) (bytes[64] - 27);
+        String signatureHex = Numeric.toHexString(bytes);
+        String expectedAddress = "0x" + Keys.getAddress(keyPair.getPublicKey());
+
+        assertThat(verifier.verify(message, signatureHex, expectedAddress)).isTrue();
+    }
+
+    @Test
+    void verify_returnsFalse_forNullInputs() {
+        assertThat(verifier.verify(null, "0x1234", "0xabc")).isFalse();
+        assertThat(verifier.verify("challenge", null, "0xabc")).isFalse();
+        assertThat(verifier.verify("challenge", "0x1234", null)).isFalse();
+    }
+
+    @Test
+    void verify_returnsFalse_forInvalidHexSignature() {
+        ECKeyPair keyPair = ECKeyPair.create(PRIVATE_KEY);
+        String expectedPublicKey = "0x" + keyPair.getPublicKey().toString(16);
+
+        assertThat(verifier.verify("challenge", "0xzz", expectedPublicKey)).isFalse();
     }
 
     private static String toSignatureHex(Sign.SignatureData sig) {

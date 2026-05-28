@@ -17,13 +17,15 @@ import java.util.Arrays;
 @Component
 public class SignatureVerifier {
 
+    private static final byte[] EMPTY_BYTES = new byte[0];
+
     public boolean verify(String message, String signatureHex, String expectedPublicKeyHex) {
         if (message == null || signatureHex == null || expectedPublicKeyHex == null) {
             return false;
         }
 
         byte[] signatureBytes = parseHex(signatureHex);
-        if (signatureBytes == null || signatureBytes.length != 65) {
+        if (signatureBytes.length != 65) {
             return false;
         }
 
@@ -48,7 +50,7 @@ public class SignatureVerifier {
                     message.getBytes(StandardCharsets.UTF_8), signatureData);
             String recoveredAddress = "0x" + Keys.getAddress(recoveredKey);
             return recoveredAddress.equalsIgnoreCase(expectedAddress);
-        } catch (SignatureException ex) {
+        } catch (SignatureException _) {
             return false;
         }
     }
@@ -56,8 +58,8 @@ public class SignatureVerifier {
     private static byte[] parseHex(String value) {
         try {
             return Numeric.hexStringToByteArray(value);
-        } catch (RuntimeException ex) {
-            return null;
+        } catch (RuntimeException _) {
+            return EMPTY_BYTES;
         }
     }
 
@@ -92,7 +94,7 @@ public class SignatureVerifier {
 
         try {
             return "0x" + Keys.getAddress(new BigInteger(normalizedPublicKey, 16));
-        } catch (RuntimeException ex) {
+        } catch (RuntimeException _) {
             return null;
         }
     }
