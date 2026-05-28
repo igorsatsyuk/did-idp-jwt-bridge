@@ -11,6 +11,7 @@ import { finalize } from 'rxjs';
 
 import { Api, AuthTokenRequest, AuthTokenResponse } from '../../core/api';
 import { saveAccessToken } from '../../core/auth-session';
+import { formatHttpErrorMessage } from '../../core/http-error';
 
 @Component({
   selector: 'app-auth',
@@ -62,7 +63,7 @@ export class Auth {
           this.successMessage = 'Challenge received. Sign it with your private key.';
         },
         error: (error: HttpErrorResponse) => {
-          this.errorMessage = this.formatErrorMessage(error, 'Could not fetch challenge');
+          this.errorMessage = formatHttpErrorMessage(error, 'Could not fetch challenge');
         }
       });
   }
@@ -145,7 +146,7 @@ export class Auth {
           this.successMessage = 'JWT received and saved to session storage.';
         },
         error: (error: HttpErrorResponse) => {
-          this.errorMessage = this.formatErrorMessage(error, 'Could not exchange token');
+          this.errorMessage = formatHttpErrorMessage(error, 'Could not exchange token');
         }
       });
   }
@@ -171,46 +172,6 @@ export class Auth {
       return null;
     }
 
-    return null;
-  }
-
-  private formatErrorMessage(error: HttpErrorResponse, fallback: string): string {
-    if (typeof error.error === 'string' && error.error.trim().length > 0) {
-      const maybeJsonMessage = this.extractMessageFromJson(error.error);
-      if (maybeJsonMessage !== null) {
-        return maybeJsonMessage;
-      }
-      return error.error;
-    }
-
-    if (
-      typeof error.error === 'object' &&
-      error.error !== null &&
-      'message' in error.error &&
-      typeof error.error.message === 'string' &&
-      error.error.message.trim().length > 0
-    ) {
-      return error.error.message;
-    }
-
-    return `${fallback} (HTTP ${error.status || 'unknown'})`;
-  }
-
-  private extractMessageFromJson(value: string): string | null {
-    try {
-      const parsed = JSON.parse(value);
-      if (
-        typeof parsed === 'object' &&
-        parsed !== null &&
-        'message' in parsed &&
-        typeof parsed.message === 'string' &&
-        parsed.message.trim().length > 0
-      ) {
-        return parsed.message;
-      }
-    } catch {
-      return null;
-    }
     return null;
   }
 

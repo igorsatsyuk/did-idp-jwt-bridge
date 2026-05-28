@@ -3,11 +3,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { Api, ProfileResponse } from '../../core/api';
 import { readAccessToken } from '../../core/auth-session';
-import { Router } from '@angular/router';
+import { formatHttpErrorMessage } from '../../core/http-error';
 
 @Component({
   selector: 'app-profile',
@@ -36,7 +37,7 @@ export class Profile implements OnInit {
     const token = readAccessToken();
     if (token === null) {
       this.errorMessage = 'JWT not found in session storage. Please authenticate first.';
-      void this.router.navigate(['/auth']);
+      this.navigateToAuth();
       return;
     }
 
@@ -52,51 +53,19 @@ export class Profile implements OnInit {
         error: (error: HttpErrorResponse) => {
           if (error.status === 401) {
             this.errorMessage = 'JWT is missing or expired. Redirecting to auth flow.';
-            void this.router.navigate(['/auth']);
+            this.navigateToAuth();
             return;
           }
-          this.errorMessage = this.formatErrorMessage(error, 'Could not load protected profile');
+          this.errorMessage = formatHttpErrorMessage(error, 'Could not load protected profile');
         }
       });
   }
 
-  private formatErrorMessage(error: HttpErrorResponse, fallback: string): string {
-    if (typeof error.error === 'string' && error.error.trim().length > 0) {
-      const maybeJsonMessage = this.extractMessageFromJson(error.error);
-      if (maybeJsonMessage !== null) {
-        return maybeJsonMessage;
-      }
-      return error.error;
-    }
-
-    if (
-      typeof error.error === 'object' &&
-      error.error !== null &&
-      'message' in error.error &&
-      typeof error.error.message === 'string' &&
-      error.error.message.trim().length > 0
-    ) {
-      return error.error.message;
-    }
-
-    return `${fallback} (HTTP ${error.status || 'unknown'})`;
-  }
-
-  private extractMessageFromJson(value: string): string | null {
-    try {
-      const parsed = JSON.parse(value);
-      if (
-        typeof parsed === 'object' &&
-        parsed !== null &&
-        'message' in parsed &&
-        typeof parsed.message === 'string' &&
-        parsed.message.trim().length > 0
-      ) {
-        return parsed.message;
-      }
-    } catch {
-      return null;
-    }
-    return null;
+  private navigateToAuth(): void {
+    this.router.navigate(['/auth']).catch((error: unknown) => {
+      const details =
+        error instanceof Error && error.message.trim().length > 0 ? ` ${error.message}` : '';
+      this.errorMessage = `Failed to navigate to auth flow.${details}`;
+    });
   }
 }
