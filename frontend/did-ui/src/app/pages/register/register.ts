@@ -34,7 +34,6 @@ interface GeneratedWalletSnapshot {
   styleUrl: './register.scss'
 })
 export class Register {
-  private static readonly SESSION_WALLET_KEY = 'did-ui.generated-wallet';
   private readonly formBuilder = inject(FormBuilder);
   private readonly api = inject(Api);
 
@@ -67,7 +66,6 @@ export class Register {
       publicKey: wallet.signingKey.publicKey,
       privateKey: wallet.privateKey
     };
-    sessionStorage.setItem(Register.SESSION_WALLET_KEY, JSON.stringify(this.generatedWallet));
 
     this.successMessage = null;
     this.errorMessage = null;

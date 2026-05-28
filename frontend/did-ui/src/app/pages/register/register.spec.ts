@@ -17,7 +17,6 @@ describe('Register', () => {
   let component: Register;
   let fixture: ComponentFixture<Register>;
   let httpMock: HttpTestingController;
-  let sessionStorageSetItemSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -28,7 +27,6 @@ describe('Register', () => {
     fixture = TestBed.createComponent(Register);
     component = fixture.componentInstance;
     httpMock = TestBed.inject(HttpTestingController);
-    sessionStorageSetItemSpy = vi.spyOn(Storage.prototype, 'setItem');
     vi.spyOn(Wallet, 'createRandom').mockReturnValue(MOCK_WALLET);
     await fixture.whenStable();
   });
@@ -46,7 +44,6 @@ describe('Register', () => {
     expect(formValue.publicKey.length).toBe(132);
     expect(formValue.backupConfirmed).toBe(false);
     expect(component.generatedPrivateKey).toBe(MOCK_WALLET.privateKey);
-    expect(sessionStorageSetItemSpy).toHaveBeenCalledTimes(1);
   });
 
   it('posts DID registration and shows success feedback', () => {
