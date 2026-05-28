@@ -68,11 +68,11 @@ Possible errors:
 ## Auth Bridge Service (`http://localhost:8082`)
 
 ### GET `/auth/challenge`
-Returns one-time nonce challenge (UUID string).
+Returns one-time nonce challenge in the format `<instanceId>:<uuid>`.
 
 Response `200 OK`:
 ```text
-3dcf3c45-fc87-4aac-9af7-82e92f2b34af
+auth-bridge-service:3dcf3c45-fc87-4aac-9af7-82e92f2b34af
 ```
 
 ### POST `/auth/token`
@@ -82,7 +82,7 @@ Request:
 ```json
 {
   "did": "did:ethr:0x1111111111111111111111111111111111111111",
-  "challenge": "3dcf3c45-fc87-4aac-9af7-82e92f2b34af",
+  "challenge": "auth-bridge-service:3dcf3c45-fc87-4aac-9af7-82e92f2b34af",
   "signature": "0x..."
 }
 ```
@@ -99,6 +99,7 @@ Response `200 OK`:
 Possible errors:
 - `401 Unauthorized` — challenge invalid/expired/replayed.
 - `401 Unauthorized` — DID revoked.
+- `429 Too Many Requests` — max active challenges reached.
 - `5xx` — signature or upstream processing failure.
 
 ---
