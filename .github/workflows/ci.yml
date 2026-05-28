@@ -114,6 +114,13 @@ jobs:
         working-directory: frontend/did-ui
         run: npm run test -- --watch=false --coverage
 
+      - name: Convert frontend coverage to lcov for Sonar
+        working-directory: frontend/did-ui
+        run: |
+          mkdir -p .nyc_output
+          cp coverage/did-ui/coverage-final.json .nyc_output/out.json
+          npx -y nyc report --reporter=lcov --temp-dir .nyc_output --report-dir coverage
+
       - name: Upload frontend coverage report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
