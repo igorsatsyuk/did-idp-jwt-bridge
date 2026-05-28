@@ -18,6 +18,9 @@ jwt:
 services:
   identity-url: ${IDENTITY_SERVICE_URL:http://localhost:8081}
 
+auth:
+  challenge-ttl-minutes: ${AUTH_CHALLENGE_TTL_MINUTES:5}
+
 blockchain:
   rpc-url: http://localhost:8545
   contract-address: ${DID_REGISTRY_ADDRESS:0x0000000000000000000000000000000000000000}

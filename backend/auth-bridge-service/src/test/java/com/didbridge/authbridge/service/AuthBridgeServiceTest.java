@@ -19,7 +19,10 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,6 +42,8 @@ class AuthBridgeServiceTest {
     private JwtService jwtService;
     @Mock
     private SignatureVerifier signatureVerifier;
+    @Mock
+    private ChallengeService challengeService;
 
     private AuthBridgeService service;
 
@@ -53,6 +58,7 @@ class AuthBridgeServiceTest {
                 webClientBuilder,
                 jwtService,
                 signatureVerifier,
+                challengeService,
                 "http://identity-service:8081");
     }
 
@@ -71,6 +77,8 @@ class AuthBridgeServiceTest {
         AuthResponse response = service.authenticate(request).block();
 
         assertThat(response).isEqualTo(new AuthResponse("jwt-token", "Bearer", 3600));
+        verify(challengeService).ensureActiveOrThrow(request.challenge());
+        verify(challengeService).consumeOrThrow(request.challenge());
     }
 
     @Test
@@ -87,6 +95,8 @@ class AuthBridgeServiceTest {
         assertThatThrownBy(authMono::block)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("not active");
+        verify(challengeService).ensureActiveOrThrow(request.challenge());
+        verify(challengeService, never()).consumeOrThrow(request.challenge());
     }
 
     @Test
@@ -104,13 +114,28 @@ class AuthBridgeServiceTest {
         assertThatThrownBy(authMono::block)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Invalid signature");
+        verify(challengeService).ensureActiveOrThrow(request.challenge());
+        verify(challengeService, never()).consumeOrThrow(request.challenge());
+    }
+
+    @Test
+    void authenticate_returnsUnauthorized_whenChallengeInvalidOrReplayed() {
+        AuthRequest request = new AuthRequest("did:example:alice", "replayed", "0xsignature");
+        doThrow(new InvalidChallengeException("Challenge is invalid, expired, or already used"))
+                .when(challengeService).ensureActiveOrThrow(request.challenge());
+
+        Mono<AuthResponse> authMono = service.authenticate(request);
+        assertThatThrownBy(authMono::block)
+                .isInstanceOf(InvalidChallengeException.class)
+                .hasMessageContaining("invalid, expired, or already used");
     }
 
     @Test
     void generateChallenge_returnsUuidString() {
+        String issued = UUID.randomUUID().toString();
+        when(challengeService.issueChallenge()).thenReturn(issued);
         String challenge = service.generateChallenge().block();
 
-        assertThat(challenge).isNotBlank();
-        assertThat(UUID.fromString(challenge)).isNotNull();
+        assertThat(challenge).isEqualTo(issued);
     }
 }

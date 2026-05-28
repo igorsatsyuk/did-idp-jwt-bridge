@@ -11,7 +11,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Authenticates a DID holder by:
@@ -25,23 +24,27 @@ public class AuthBridgeService {
     private final WebClient identityClient;
     private final JwtService jwtService;
     private final SignatureVerifier signatureVerifier;
+    private final ChallengeService challengeService;
 
     public AuthBridgeService(
             WebClient.Builder webClientBuilder,
             JwtService jwtService,
             SignatureVerifier signatureVerifier,
+            ChallengeService challengeService,
             @Value("${services.identity-url}") String identityUrl
     ) {
         this.identityClient = webClientBuilder.baseUrl(identityUrl).build();
         this.jwtService = jwtService;
         this.signatureVerifier = signatureVerifier;
+        this.challengeService = challengeService;
     }
 
     public Mono<AuthResponse> authenticate(AuthRequest request) {
-        return identityClient.get()
-                .uri("/did/{did}", request.did())
-                .retrieve()
-                .bodyToMono(DidDocument.class)
+        return Mono.fromRunnable(() -> challengeService.ensureActiveOrThrow(request.challenge()))
+                .then(Mono.defer(() -> identityClient.get()
+                        .uri("/did/{did}", request.did())
+                        .retrieve()
+                        .bodyToMono(DidDocument.class)))
                 .flatMap(doc -> {
                     if (doc.status() != DidStatus.ACTIVE) {
                         return Mono.error(new IllegalStateException("DID is not active"));
@@ -49,12 +52,13 @@ public class AuthBridgeService {
                     if (!signatureVerifier.verify(request.challenge(), request.signature(), doc.publicKey())) {
                         return Mono.error(new IllegalArgumentException("Invalid signature"));
                     }
+                    challengeService.consumeOrThrow(request.challenge());
                     String token = jwtService.generateToken(request.did(), Map.of("did", request.did()));
                     return Mono.just(new AuthResponse(token, "Bearer", 3600));
                 });
     }
 
     public Mono<String> generateChallenge() {
-        return Mono.just(UUID.randomUUID().toString());
+        return Mono.fromSupplier(challengeService::issueChallenge);
     }
 }
