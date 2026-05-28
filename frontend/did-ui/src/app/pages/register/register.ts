@@ -122,7 +122,7 @@ export class Register {
       return;
     }
 
-    const shouldRevoke = window.confirm(
+    const shouldRevoke = globalThis.confirm(
       `Revoke DID ${this.registeredDid.did}? This action will block JWT issuance for this DID.`
     );
     if (!shouldRevoke) {
