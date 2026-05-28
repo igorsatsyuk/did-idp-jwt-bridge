@@ -75,6 +75,9 @@ Response `200 OK`:
 auth-bridge-service:3dcf3c45-fc87-4aac-9af7-82e92f2b34af
 ```
 
+Possible errors:
+- `429 Too Many Requests` — max active challenges reached.
+
 ### POST `/auth/token`
 Validates challenge, resolves DID document, verifies ECDSA signature, issues JWT.
 
@@ -99,7 +102,6 @@ Response `200 OK`:
 Possible errors:
 - `401 Unauthorized` — challenge invalid/expired/replayed.
 - `401 Unauthorized` — DID revoked.
-- `429 Too Many Requests` — max active challenges reached.
 - `5xx` — signature or upstream processing failure.
 
 ---
@@ -122,8 +124,8 @@ Response `200 OK`:
   "claims": {
     "did": "did:ethr:0x1111111111111111111111111111111111111111",
     "sub": "did:ethr:0x1111111111111111111111111111111111111111",
-    "iat": 1716912000,
-    "exp": 1716915600
+    "iat": 1780000000,
+    "exp": 1780003600
   }
 }
 ```
