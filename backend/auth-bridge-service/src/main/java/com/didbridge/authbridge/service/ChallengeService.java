@@ -1,5 +1,6 @@
 package com.didbridge.authbridge.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -17,6 +18,7 @@ public class ChallengeService {
     private final Clock clock;
     private final long ttlMinutes;
 
+    @Autowired
     public ChallengeService(@Value("${auth.challenge-ttl-minutes:5}") long ttlMinutes) {
         this(ttlMinutes, Clock.systemUTC());
     }
