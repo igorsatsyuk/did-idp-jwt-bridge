@@ -2,6 +2,7 @@ package com.didbridge.resource.config;
 
 import com.didbridge.security.JwtService;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import org.springframework.security.oauth2.jwt.BadJwtException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
@@ -25,8 +26,9 @@ public class JwtServiceReactiveJwtDecoder implements ReactiveJwtDecoder {
     public Mono<Jwt> decode(String token) {
         return Mono.fromCallable(() -> {
             try {
-                Claims claims = jwtService.parseToken(token);
-                Map<String, Object> headers = Map.of("alg", "HS256");
+                Jws<Claims> signedClaims = jwtService.parseSignedClaims(token);
+                Claims claims = signedClaims.getPayload();
+                Map<String, Object> headers = new HashMap<>(signedClaims.getHeader());
                 Map<String, Object> jwtClaims = new HashMap<>(claims);
 
                 Instant issuedAt = claims.getIssuedAt() != null ? claims.getIssuedAt().toInstant() : null;
