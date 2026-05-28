@@ -86,7 +86,8 @@ class ChallengeServiceTest {
 
     @Test
     void constructor_rejectsNonPositiveTtlConfig() {
-        assertThatThrownBy(() -> new ChallengeService(0, Clock.systemUTC()))
+        Clock clock = Clock.systemUTC();
+        assertThatThrownBy(() -> new ChallengeService(0, clock))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("challenge-ttl-minutes");
     }
@@ -136,14 +137,16 @@ class ChallengeServiceTest {
 
     @Test
     void constructor_rejectsBlankInstanceId() {
-        assertThatThrownBy(() -> new ChallengeService(5, 10, " ", Clock.systemUTC()))
+        Clock clock = Clock.systemUTC();
+        assertThatThrownBy(() -> new ChallengeService(5, 10, " ", clock))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("auth.instance-id");
     }
 
     @Test
     void constructor_rejectsInstanceIdContainingSeparator() {
-        assertThatThrownBy(() -> new ChallengeService(5, 10, "node:a", Clock.systemUTC()))
+        Clock clock = Clock.systemUTC();
+        assertThatThrownBy(() -> new ChallengeService(5, 10, "node:a", clock))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("must not contain ':'");
     }
