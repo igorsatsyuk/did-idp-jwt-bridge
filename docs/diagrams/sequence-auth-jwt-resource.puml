@@ -1,0 +1,26 @@
+@startuml
+title Auth Flow (DID -> JWT -> Resource API)
+
+actor Client
+participant "Auth Bridge\n:8082" as Auth
+participant "Identity Service\n:8081" as Identity
+participant "DidRegistry Contract" as Contract
+participant "Resource API\n:8083" as Resource
+
+Client -> Auth: GET /auth/challenge
+Auth --> Client: 200 challenge (nonce UUID)
+
+Client -> Client: Sign challenge with private key
+
+Client -> Auth: POST /auth/token\n{ did, challenge, signature }
+Auth -> Identity: GET /did/{did}
+Identity -> Contract: getDid(did)
+Contract --> Identity: DidRecord(publicKey, status)
+Identity --> Auth: DidDocument
+Auth -> Auth: verify signature + challenge
+Auth --> Client: 200 { accessToken, tokenType, expiresIn }
+
+Client -> Resource: GET /api/me\nAuthorization: Bearer <JWT>
+Resource --> Client: 200 { did, claims }
+
+@enduml

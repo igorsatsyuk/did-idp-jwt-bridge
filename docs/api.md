@@ -1,85 +1,161 @@
 # API Reference
 
-## Identity Service — port 8081
+## Identity Service (`http://localhost:8081`)
 
-### POST /did/register
-Register a new DID.
+### POST `/did/register`
+Registers a new DID in `DidRegistry` and returns DID document.
+
+Request:
 ```json
-{ "did": "did:example:alice", "publicKey": "0x04..." }
+{
+  "did": "did:ethr:0x1111111111111111111111111111111111111111",
+  "publicKey": "0x04aabbcc..."
+}
 ```
-Response 201:
+
+Response `201 Created`:
 ```json
-{ "did": "did:example:alice", "publicKey": "0x04...", "status": "ACTIVE", "createdAt": "...", "updatedAt": "..." }
+{
+  "did": "did:ethr:0x1111111111111111111111111111111111111111",
+  "publicKey": "0x04aabbcc...",
+  "status": "ACTIVE",
+  "createdAt": "2026-05-28T16:00:00Z",
+  "updatedAt": "2026-05-28T16:00:00Z"
+}
 ```
 
-### GET /did/{did}
-Resolve a DID. Returns 404 if not found.
+Possible errors:
+- `409 Conflict` — DID already registered.
 
-### DELETE /did/{did}/revoke
-Revoke a DID. Returns 204.
+### GET `/did/{did}`
+Resolves DID document from blockchain.
+
+Example:
+```bash
+curl "http://localhost:8081/did/did:ethr:0x1111111111111111111111111111111111111111"
+```
+
+Response `200 OK`:
+```json
+{
+  "did": "did:ethr:0x1111111111111111111111111111111111111111",
+  "publicKey": "0x04aabbcc...",
+  "status": "ACTIVE",
+  "createdAt": "2026-05-28T16:00:00Z",
+  "updatedAt": "2026-05-28T16:00:00Z"
+}
+```
+
+Possible errors:
+- `404 Not Found` — DID does not exist.
+
+### DELETE `/did/{did}/revoke`
+Revokes DID status on-chain.
+
+Example:
+```bash
+curl -X DELETE "http://localhost:8081/did/did:ethr:0x1111111111111111111111111111111111111111/revoke"
+```
+
+Response `204 No Content`
+
+Possible errors:
+- `404 Not Found` — DID does not exist.
+- `403 Forbidden` — caller is not DID owner.
 
 ---
 
-## Auth Bridge Service — port 8082
+## Auth Bridge Service (`http://localhost:8082`)
 
-### GET /auth/challenge
-Returns a one-time challenge UUID string.
+### GET `/auth/challenge`
+Returns one-time nonce challenge (UUID string).
 
-### POST /auth/token
-```json
-{ "did": "did:example:alice", "challenge": "uuid", "signature": "0x..." }
+Response `200 OK`:
+```text
+3dcf3c45-fc87-4aac-9af7-82e92f2b34af
 ```
-Response 200:
+
+### POST `/auth/token`
+Validates challenge, resolves DID document, verifies ECDSA signature, issues JWT.
+
+Request:
 ```json
-{ "accessToken": "eyJ...", "tokenType": "Bearer", "expiresIn": 3600 }
+{
+  "did": "did:ethr:0x1111111111111111111111111111111111111111",
+  "challenge": "3dcf3c45-fc87-4aac-9af7-82e92f2b34af",
+  "signature": "0x..."
+}
 ```
+
+Response `200 OK`:
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
+  "tokenType": "Bearer",
+  "expiresIn": 3600
+}
+```
+
+Possible errors:
+- `401 Unauthorized` — challenge invalid/expired/replayed.
+- `401 Unauthorized` — DID revoked.
+- `5xx` — signature or upstream processing failure.
 
 ---
 
-## Resource API — port 8083
+## Resource API (`http://localhost:8083`)
 
-### GET /api/me
-Requires `Authorization: Bearer <jwt>`.
+### GET `/api/me`
+Returns JWT subject and claims. Requires bearer token.
 
-Response 200:
-```json
-{ "did": "did:example:alice", "claims": { ... } }
+Example:
+```bash
+curl "http://localhost:8083/api/me" \
+  -H "Authorization: Bearer <jwt>"
 ```
+
+Response `200 OK`:
+```json
+{
+  "did": "did:ethr:0x1111111111111111111111111111111111111111",
+  "claims": {
+    "did": "did:ethr:0x1111111111111111111111111111111111111111",
+    "sub": "did:ethr:0x1111111111111111111111111111111111111111",
+    "iat": 1716912000,
+    "exp": 1716915600
+  }
+}
+```
+
+Possible errors:
+- `401 Unauthorized` — missing, invalid, or expired JWT.
 
 ---
 
 ## DidRegistry Smart Contract
 
-**Network**: Hardhat / private Ethereum (port 8545)  
+**Network**: Hardhat / private Ethereum (`:8545`)  
 **ABI**: `backend/identity-service/src/main/resources/abi/DidRegistry.abi`  
-**Java wrapper**: auto-generated at `backend/identity-service/target/generated-sources/web3j/com/didbridge/identity/contract/DidRegistry.java`
+**Java wrapper**: generated under `backend/identity-service/target/generated-sources/web3j/`
 
-### registerDid(string did, string publicKey)
-Registers a new DID on-chain. Emits `DidRegistered`.
+### `registerDid(string did, string publicKey)`
+Registers DID and emits `DidRegistered`.
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `did` | string | Fully-qualified DID string, e.g. `did:example:alice` |
-| `publicKey` | string | Hex-encoded secp256k1 public key, e.g. `0x04...` (uncompressed, 65 bytes). **No format validation on-chain** — the contract stores any string; callers must ensure the key is a valid EC public key before registration. |
+Reverts:
+- `"DID already registered"`
 
-Reverts with `"DID already registered"` if the DID exists.
+### `revokeDid(string did)`
+Revokes DID (owner-only) and emits `DidRevoked`.
 
-### revokeDid(string did)
-Revokes an existing DID. Only callable by the DID owner. Emits `DidRevoked`.
+Reverts:
+- `"DID does not exist"`
+- `"Not the DID owner"`
 
-Reverts with `"DID does not exist"` or `"Not the DID owner"`.
+### `getDid(string did) -> (publicKey, status, createdAt, updatedAt, owner)`
+Returns full DID record. `status`: `0 = ACTIVE`, `1 = REVOKED`.
 
-### getDid(string did) → (publicKey, status, createdAt, updatedAt, owner)
-Returns full DID record. `status`: `0 = Active`, `1 = Revoked`.
+Reverts:
+- `"DID does not exist"`
 
-Reverts with `"DID does not exist"`.
-
-### isActive(string did) → bool
-Returns `true` if the DID exists and has `Active` status. Returns `false` for non-existent or revoked DIDs (no revert).
-
-### Events
-
-| Event | Params |
-|-------|--------|
-| `DidRegistered` | `string indexed did`, `address indexed owner`, `uint256 timestamp` |
-| `DidRevoked` | `string indexed did`, `address indexed owner`, `uint256 timestamp` |
+### `isActive(string did) -> bool`
+Returns `true` only for existing `ACTIVE` DID, otherwise `false`.

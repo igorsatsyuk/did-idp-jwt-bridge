@@ -1,0 +1,15 @@
+@startuml
+title DID Registration Flow
+
+actor Client
+participant "Identity Service\n:8081" as Identity
+participant "DidRegistry Contract" as Contract
+
+Client -> Identity: POST /did/register\n{ did, publicKey }
+Identity -> Contract: registerDid(did, publicKey)
+Contract --> Identity: Transaction receipt (success)
+Identity -> Contract: getDid(did)
+Contract --> Identity: { publicKey, status=ACTIVE, timestamps, owner }
+Identity --> Client: 201 Created\nDidDocument(status=ACTIVE)
+
+@enduml

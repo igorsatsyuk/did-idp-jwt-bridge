@@ -1,0 +1,25 @@
+@startuml
+title DID IdP JWT Bridge - C4 Context Diagram
+
+skinparam backgroundColor #FFFFFF
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+
+actor "User / Client App" as client
+
+rectangle "DID IdP JWT Bridge System" as system {
+  rectangle "Auth Bridge Service\n(Spring Boot, :8082)" as auth
+  rectangle "Identity Service\n(Spring Boot + Web3j, :8081)" as identity
+  rectangle "Resource API\n(Spring Security, :8083)" as resource
+}
+
+database "DidRegistry Smart Contract\n(Ethereum / Hardhat, :8545)" as blockchain
+
+client --> auth : 1) Request challenge\n2) Submit DID + signature\n3) Receive JWT
+auth --> identity : Resolve DID document
+identity --> blockchain : registerDid / getDid / revokeDid
+client --> resource : Call protected endpoint\nAuthorization: Bearer <JWT>
+resource --> auth : Trust shared JWT signing secret
+
+@enduml
