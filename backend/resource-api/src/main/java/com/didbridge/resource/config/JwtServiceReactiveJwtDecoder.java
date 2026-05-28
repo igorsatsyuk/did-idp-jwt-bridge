@@ -28,6 +28,10 @@ public class JwtServiceReactiveJwtDecoder implements ReactiveJwtDecoder {
             try {
                 Jws<Claims> signedClaims = jwtService.parseSignedClaims(token);
                 Claims claims = signedClaims.getPayload();
+                String did = claims.getSubject();
+                if (did == null || did.isBlank()) {
+                    throw new BadJwtException("JWT subject (did) is required");
+                }
                 Map<String, Object> headers = new HashMap<>(signedClaims.getHeader());
                 Map<String, Object> jwtClaims = new HashMap<>(claims);
 
@@ -41,6 +45,8 @@ public class JwtServiceReactiveJwtDecoder implements ReactiveJwtDecoder {
                 }
 
                 return new Jwt(token, issuedAt, expiresAt, headers, jwtClaims);
+            } catch (BadJwtException ex) {
+                throw ex;
             } catch (Exception ex) {
                 throw new BadJwtException("Invalid JWT token", ex);
             }

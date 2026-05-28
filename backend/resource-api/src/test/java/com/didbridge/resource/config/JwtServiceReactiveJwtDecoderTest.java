@@ -45,6 +45,17 @@ class JwtServiceReactiveJwtDecoderTest {
                 .hasMessageContaining("Invalid JWT token");
     }
 
+    @Test
+    void decode_throwsJwtException_whenSubjectIsBlank() {
+        JwtService jwtService = new JwtService(SECRET, 60);
+        JwtServiceReactiveJwtDecoder decoder = new JwtServiceReactiveJwtDecoder(jwtService);
+        String tokenWithBlankSubject = jwtService.generateToken("", Map.of("role", "user"));
+
+        assertThatThrownBy(() -> decoder.decode(tokenWithBlankSubject).block())
+                .isInstanceOf(JwtException.class)
+                .hasMessageContaining("JWT subject (did) is required");
+    }
+
     private Map<String, Object> extractHeader(String token) throws Exception {
         String[] parts = token.split("\\.");
         String headerJson = new String(Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);

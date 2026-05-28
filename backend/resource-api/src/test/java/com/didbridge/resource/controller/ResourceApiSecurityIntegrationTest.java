@@ -57,6 +57,18 @@ class ResourceApiSecurityIntegrationTest {
                 .jsonPath("$.claims.role").isEqualTo("user");
     }
 
+    @Test
+    void me_returnsUnauthorized_whenTokenSubjectBlank() {
+        WebTestClient webTestClient = webTestClient();
+        String token = jwtService.generateToken("", Map.of("role", "user"));
+
+        webTestClient.get()
+                .uri("/api/me")
+                .header("Authorization", "Bearer " + token)
+                .exchange()
+                .expectStatus().isUnauthorized();
+    }
+
     private WebTestClient webTestClient() {
         return WebTestClient.bindToServer()
                 .baseUrl("http://localhost:" + port)
