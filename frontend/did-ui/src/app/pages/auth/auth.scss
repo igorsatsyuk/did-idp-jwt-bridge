@@ -1,3 +1,53 @@
 mat-card {
   max-width: 720px;
 }
+
+.subtitle {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.result-block {
+  margin-top: 1rem;
+}
+
+.wrap-anywhere {
+  overflow-wrap: anywhere;
+}
+
+pre {
+  margin: 0;
+  background: #f5f5f5;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  overflow: auto;
+}
+
+.feedback {
+  margin-top: 1rem;
+  display: block;
+}
+
+.success {
+  color: #1b5e20;
+}
+
+.error {
+  color: #b71c1c;
+}
