@@ -80,7 +80,6 @@ export class Register {
       return;
     }
 
-    this.isSubmitting = true;
     this.successMessage = null;
     this.errorMessage = null;
     this.registeredDid = null;
@@ -99,6 +98,7 @@ export class Register {
       return;
     }
 
+    this.isSubmitting = true;
     const payload: RegisterDidRequest = {
       did: this.generatedWallet.did,
       publicKey: this.generatedWallet.publicKey

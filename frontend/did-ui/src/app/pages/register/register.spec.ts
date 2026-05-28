@@ -125,6 +125,22 @@ describe('Register', () => {
 
     httpMock.expectNone('/did/register');
     expect(component.errorMessage).toBe('DID and public key must match the generated wallet.');
+    expect(component.isSubmitting).toBe(false);
+  });
+
+  it('does not get stuck in submitting when wallet was not generated', () => {
+    component.registerForm.patchValue({
+      did: 'did:ethr:0x1111111111111111111111111111111111111111',
+      publicKey:
+        '0x040102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f40',
+      backupConfirmed: true
+    });
+
+    component.submitRegistration();
+
+    httpMock.expectNone('/did/register');
+    expect(component.errorMessage).toBe('Generate a key pair before registration.');
+    expect(component.isSubmitting).toBe(false);
   });
 
   afterEach(() => {
