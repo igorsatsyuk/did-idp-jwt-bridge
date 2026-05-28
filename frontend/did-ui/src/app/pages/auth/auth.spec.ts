@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Wallet } from 'ethers';
 
+import { ACCESS_TOKEN_STORAGE_KEY } from '../../core/auth-session';
 import { Auth } from './auth';
 
 describe('Auth', () => {
@@ -124,7 +125,7 @@ describe('Auth', () => {
       expiresIn: 3600
     });
 
-    expect(sessionStorageSetItemSpy).toHaveBeenCalledWith('did-ui.access-token', JWT_TOKEN);
+    expect(sessionStorageSetItemSpy).toHaveBeenCalledWith(ACCESS_TOKEN_STORAGE_KEY, JWT_TOKEN);
     expect(component.jwtClaims?.['sub']).toBe(DID);
     expect(component.jwtClaims?.['role']).toBe('USER');
     expect(component.successMessage).toContain('JWT received');

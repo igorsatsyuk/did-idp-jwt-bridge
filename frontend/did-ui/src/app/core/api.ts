@@ -27,6 +27,11 @@ export interface AuthTokenResponse {
   expiresIn: number;
 }
 
+export interface ProfileResponse {
+  did: string;
+  claims: Record<string, unknown>;
+}
+
 @Injectable({ providedIn: 'root' })
 export class Api {
   constructor(private readonly http: HttpClient) {}
@@ -43,8 +48,8 @@ export class Api {
     return this.http.post<AuthTokenResponse>('/auth/token', payload);
   }
 
-  getProfile(token: string): Observable<unknown> {
-    return this.http.get('/api/me', {
+  getProfile(token: string): Observable<ProfileResponse> {
+    return this.http.get<ProfileResponse>('/api/me', {
       headers: { Authorization: `Bearer ${token}` }
     });
   }

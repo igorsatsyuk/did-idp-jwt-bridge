@@ -3,6 +3,28 @@
     <mat-card-title>Profile</mat-card-title>
   </mat-card-header>
   <mat-card-content>
-    <p>Protected resource data and JWT claims will be shown here in the next issue.</p>
+    <p class="subtitle">Call the protected Resource API using JWT from session storage and inspect returned claims.</p>
+
+    <div class="actions">
+      <button mat-flat-button color="primary" type="button" (click)="loadProfile()" [disabled]="isLoading">
+        Reload profile
+      </button>
+    </div>
+
+    <p *ngIf="isLoading">Loading protected profile...</p>
+
+    <section *ngIf="profile" class="result-block">
+      <p><strong>DID:</strong> {{ profile.did }}</p>
+      <h3>Claims</h3>
+      <pre>{{ profile.claims | json }}</pre>
+    </section>
+
+    <output *ngIf="successMessage" class="feedback success" aria-live="polite" aria-atomic="true">
+      {{ successMessage }}
+    </output>
+
+    <p *ngIf="errorMessage" class="feedback error" role="alert" aria-live="assertive" aria-atomic="true">
+      {{ errorMessage }}
+    </p>
   </mat-card-content>
 </mat-card>

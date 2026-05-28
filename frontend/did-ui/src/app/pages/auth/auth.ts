@@ -10,6 +10,7 @@ import { Wallet } from 'ethers';
 import { finalize } from 'rxjs';
 
 import { Api, AuthTokenRequest, AuthTokenResponse } from '../../core/api';
+import { saveAccessToken } from '../../core/auth-session';
 
 @Component({
   selector: 'app-auth',
@@ -26,7 +27,6 @@ import { Api, AuthTokenRequest, AuthTokenResponse } from '../../core/api';
   styleUrl: './auth.scss'
 })
 export class Auth {
-  private static readonly ACCESS_TOKEN_KEY = 'did-ui.access-token';
   private readonly formBuilder = inject(FormBuilder);
   private readonly api = inject(Api);
 
@@ -140,7 +140,7 @@ export class Auth {
       .subscribe({
         next: (response) => {
           this.tokenResponse = response;
-          sessionStorage.setItem(Auth.ACCESS_TOKEN_KEY, response.accessToken);
+          saveAccessToken(response.accessToken);
           this.jwtClaims = this.decodeJwtClaims(response.accessToken);
           this.successMessage = 'JWT received and saved to session storage.';
         },
