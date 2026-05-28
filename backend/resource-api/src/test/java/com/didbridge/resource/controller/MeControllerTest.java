@@ -26,6 +26,6 @@ class MeControllerTest {
         Map<String, Object> claims = (Map<String, Object>) result.get("claims");
 
         assertThat(result).containsEntry("did", "did:example:alice");
-        assertThat(claims.get("role")).isEqualTo("user");
+        assertThat(claims).containsEntry("role", "user");
     }
 }
