@@ -12,6 +12,13 @@ import { finalize } from 'rxjs';
 
 import { Api, DidDocument, RegisterDidRequest } from '../../core/api';
 
+interface GeneratedWalletSnapshot {
+  did: string;
+  address: string;
+  publicKey: string;
+  privateKey: string;
+}
+
 @Component({
   selector: 'app-register',
   imports: [
@@ -42,6 +49,7 @@ export class Register {
   errorMessage: string | null = null;
   registeredDid: DidDocument | null = null;
   generatedPrivateKey: string | null = null;
+  private generatedWallet: GeneratedWalletSnapshot | null = null;
 
   generateKeyPair(): void {
     const wallet = Wallet.createRandom();
@@ -53,15 +61,13 @@ export class Register {
       backupConfirmed: false
     });
     this.generatedPrivateKey = wallet.privateKey;
-    sessionStorage.setItem(
-      Register.SESSION_WALLET_KEY,
-      JSON.stringify({
-        did,
-        address: wallet.address.toLowerCase(),
-        publicKey: wallet.signingKey.publicKey,
-        privateKey: wallet.privateKey
-      })
-    );
+    this.generatedWallet = {
+      did,
+      address: wallet.address.toLowerCase(),
+      publicKey: wallet.signingKey.publicKey,
+      privateKey: wallet.privateKey
+    };
+    sessionStorage.setItem(Register.SESSION_WALLET_KEY, JSON.stringify(this.generatedWallet));
 
     this.successMessage = null;
     this.errorMessage = null;
@@ -79,10 +85,23 @@ export class Register {
     this.errorMessage = null;
     this.registeredDid = null;
 
+    if (this.generatedWallet === null) {
+      this.errorMessage = 'Generate a key pair before registration.';
+      return;
+    }
+
     const formValue = this.registerForm.getRawValue();
+    if (
+      formValue.did !== this.generatedWallet.did ||
+      formValue.publicKey !== this.generatedWallet.publicKey
+    ) {
+      this.errorMessage = 'DID and public key must match the generated wallet.';
+      return;
+    }
+
     const payload: RegisterDidRequest = {
-      did: formValue.did,
-      publicKey: formValue.publicKey
+      did: this.generatedWallet.did,
+      publicKey: this.generatedWallet.publicKey
     };
     this.api
       .registerDid(payload)

@@ -12,7 +12,7 @@
     <form class="register-form" [formGroup]="registerForm" (ngSubmit)="submitRegistration()">
       <mat-form-field appearance="outline">
         <mat-label>DID</mat-label>
-        <input matInput formControlName="did" placeholder="did:ethr:0x..." />
+        <input matInput formControlName="did" placeholder="did:ethr:0x..." readonly />
         <mat-error *ngIf="registerForm.controls.did.touched && registerForm.controls.did.hasError('required')">
           DID is required.
         </mat-error>
@@ -20,7 +20,7 @@
 
       <mat-form-field appearance="outline">
         <mat-label>Public key</mat-label>
-        <textarea matInput rows="4" formControlName="publicKey" placeholder="0x04..."></textarea>
+        <textarea matInput rows="4" formControlName="publicKey" placeholder="0x04..." readonly></textarea>
         <mat-error
           *ngIf="
             registerForm.controls.publicKey.touched &&

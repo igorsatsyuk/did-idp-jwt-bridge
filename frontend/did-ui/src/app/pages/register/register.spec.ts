@@ -114,6 +114,19 @@ describe('Register', () => {
     expect(component.registerForm.controls.backupConfirmed.invalid).toBe(true);
   });
 
+  it('does not submit when form data diverges from generated wallet', () => {
+    component.generateKeyPair();
+    component.registerForm.patchValue({
+      did: 'did:ethr:0x2222222222222222222222222222222222222222',
+      backupConfirmed: true
+    });
+
+    component.submitRegistration();
+
+    httpMock.expectNone('/did/register');
+    expect(component.errorMessage).toBe('DID and public key must match the generated wallet.');
+  });
+
   afterEach(() => {
     httpMock.verify();
     vi.restoreAllMocks();
