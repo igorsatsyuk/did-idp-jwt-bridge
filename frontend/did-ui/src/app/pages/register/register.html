@@ -55,9 +55,9 @@
       </button>
     </form>
 
-    <p *ngIf="successMessage" class="feedback success" role="status" aria-live="polite" aria-atomic="true">
+    <output *ngIf="successMessage" class="feedback success" aria-live="polite" aria-atomic="true">
       {{ successMessage }}
-    </p>
+    </output>
 
     <p *ngIf="errorMessage" class="feedback error" role="alert" aria-live="assertive" aria-atomic="true">
       {{ errorMessage }}
