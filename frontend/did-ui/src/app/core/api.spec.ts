@@ -25,12 +25,19 @@ describe('Api', () => {
 
     service.registerDid(payload).subscribe((response) => {
       expect(response.did).toBe(payload.did);
+      expect(response.status).toBe('ACTIVE');
     });
 
     const request = httpMock.expectOne('/did/register');
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual(payload);
-    request.flush({ did: payload.did, publicKey: payload.publicKey, active: true });
+    request.flush({
+      did: payload.did,
+      publicKey: payload.publicKey,
+      status: 'ACTIVE',
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z'
+    });
   });
 
   it('gets challenge as text', () => {
@@ -47,13 +54,15 @@ describe('Api', () => {
     const payload = { did: 'did:example:alice', challenge: 'nonce-123', signature: '0xsig' };
 
     service.exchangeToken(payload).subscribe((response) => {
-      expect(response.token).toBe('jwt-token');
+      expect(response.accessToken).toBe('jwt-token');
+      expect(response.tokenType).toBe('Bearer');
+      expect(response.expiresIn).toBe(3600);
     });
 
     const request = httpMock.expectOne('/auth/token');
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual(payload);
-    request.flush({ token: 'jwt-token' });
+    request.flush({ accessToken: 'jwt-token', tokenType: 'Bearer', expiresIn: 3600 });
   });
 
   it('requests profile with bearer token', () => {

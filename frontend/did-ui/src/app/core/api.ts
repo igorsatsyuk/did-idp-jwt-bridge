@@ -10,7 +10,9 @@ export interface RegisterDidRequest {
 export interface DidDocument {
   did: string;
   publicKey: string;
-  active: boolean;
+  status: 'ACTIVE' | 'REVOKED';
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AuthTokenRequest {
@@ -20,7 +22,9 @@ export interface AuthTokenRequest {
 }
 
 export interface AuthTokenResponse {
-  token: string;
+  accessToken: string;
+  tokenType: string;
+  expiresIn: number;
 }
 
 @Injectable({ providedIn: 'root' })
