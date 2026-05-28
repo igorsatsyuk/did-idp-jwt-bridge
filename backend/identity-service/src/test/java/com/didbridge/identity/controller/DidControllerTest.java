@@ -1,0 +1,58 @@
+package com.didbridge.identity.controller;
+
+import com.didbridge.identity.dto.RegisterDidRequest;
+import com.didbridge.identity.service.DidRegistryService;
+import com.didbridge.model.DidDocument;
+import com.didbridge.model.DidStatus;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Mono;
+
+import java.time.Instant;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class DidControllerTest {
+
+    @Mock
+    private DidRegistryService didRegistryService;
+
+    @Test
+    void register_delegatesToService() {
+        DidController controller = new DidController(didRegistryService);
+        RegisterDidRequest request = new RegisterDidRequest("did:example:alice", "0xpub");
+        DidDocument expected = new DidDocument(
+                request.did(), request.publicKey(), DidStatus.ACTIVE, Instant.now(), Instant.now());
+        when(didRegistryService.register(request.did(), request.publicKey())).thenReturn(Mono.just(expected));
+
+        DidDocument result = controller.register(request).block();
+
+        assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    void getById_delegatesToService() {
+        DidController controller = new DidController(didRegistryService);
+        DidDocument expected = new DidDocument(
+                "did:example:alice", "0xpub", DidStatus.ACTIVE, Instant.now(), Instant.now());
+        when(didRegistryService.findByDid("did:example:alice")).thenReturn(Mono.just(expected));
+
+        DidDocument result = controller.getById("did:example:alice").block();
+
+        assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    void revoke_delegatesToService() {
+        DidController controller = new DidController(didRegistryService);
+        when(didRegistryService.revoke("did:example:alice")).thenReturn(Mono.empty());
+
+        Void result = controller.revoke("did:example:alice").block();
+
+        assertThat(result).isNull();
+    }
+}

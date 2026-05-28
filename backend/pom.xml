@@ -89,6 +89,12 @@
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
                     <version>0.8.14</version>
+                    <configuration>
+                        <excludes>
+                            <exclude>**/*Application.class</exclude>
+                            <exclude>com/didbridge/identity/contract/**</exclude>
+                        </excludes>
+                    </configuration>
                     <executions>
                         <execution>
                             <id>prepare-agent</id>

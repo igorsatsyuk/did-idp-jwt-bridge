@@ -49,7 +49,7 @@ public class JwtService {
         try {
             parseToken(token);
             return true;
-        } catch (Exception e) {
+        } catch (Exception _) {
             return false;
         }
     }

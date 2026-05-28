@@ -34,7 +34,7 @@ public class SignatureVerifier {
             String expectedAddress = "0x" + Keys.getAddress(Numeric.toBigInt(expectedPublicKeyHex));
 
             return recoveredAddress.equalsIgnoreCase(expectedAddress);
-        } catch (Exception e) {
+        } catch (Exception _) {
             return false;
         }
     }
