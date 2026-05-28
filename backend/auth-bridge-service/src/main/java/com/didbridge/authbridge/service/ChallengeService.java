@@ -43,7 +43,7 @@ public class ChallengeService {
         this.clock = clock;
     }
 
-    public String issueChallenge() {
+    public synchronized String issueChallenge() {
         Instant now = Instant.now(clock);
         cleanupExpired(now);
         if (issuedChallenges.size() >= maxActiveChallenges) {
