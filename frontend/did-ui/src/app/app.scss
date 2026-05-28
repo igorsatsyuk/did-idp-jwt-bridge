@@ -1,0 +1,23 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.active-link {
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
+.content {
+  padding: 1.5rem;
+}
