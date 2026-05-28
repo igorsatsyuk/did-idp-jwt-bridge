@@ -3,6 +3,78 @@
     <mat-card-title>Auth Flow</mat-card-title>
   </mat-card-header>
   <mat-card-content>
-    <p>Challenge and signature exchange flow will live on this page in the next issue.</p>
+    <p class="subtitle">Fetch challenge, sign with your wallet private key, exchange for JWT, and inspect claims.</p>
+
+    <form class="auth-form" [formGroup]="authForm">
+      <mat-form-field appearance="outline">
+        <mat-label>DID</mat-label>
+        <input matInput formControlName="did" placeholder="did:ethr:0x..." />
+        <mat-error *ngIf="authForm.controls.did.touched && authForm.controls.did.hasError('required')">
+          DID is required.
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Private key</mat-label>
+        <textarea matInput rows="3" formControlName="privateKey" placeholder="0x..."></textarea>
+        <mat-error *ngIf="authForm.controls.privateKey.touched && authForm.controls.privateKey.hasError('required')">
+          Private key is required.
+        </mat-error>
+      </mat-form-field>
+
+      <div class="actions">
+        <button mat-flat-button color="primary" type="button" (click)="requestChallenge()" [disabled]="isFetchingChallenge">
+          Get challenge
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          (click)="signChallenge()"
+          [disabled]="isSigningChallenge || !challenge"
+        >
+          Sign challenge
+        </button>
+        <button
+          mat-raised-button
+          color="primary"
+          type="button"
+          (click)="exchangeToken()"
+          [disabled]="isSubmittingToken || !signature"
+        >
+          Get JWT
+        </button>
+      </div>
+    </form>
+
+    <section *ngIf="challenge" class="result-block">
+      <h3>Challenge</h3>
+      <p>{{ challenge }}</p>
+    </section>
+
+    <section *ngIf="signature" class="result-block">
+      <h3>Signature</h3>
+      <p class="wrap-anywhere">{{ signature }}</p>
+    </section>
+
+    <section *ngIf="tokenResponse" class="result-block">
+      <h3>JWT</h3>
+      <p class="wrap-anywhere">{{ tokenResponse.accessToken }}</p>
+      <p><strong>Token type:</strong> {{ tokenResponse.tokenType }}</p>
+      <p><strong>Expires in:</strong> {{ tokenResponse.expiresIn }}s</p>
+    </section>
+
+    <section *ngIf="jwtClaims" class="result-block">
+      <h3>Decoded JWT claims</h3>
+      <pre>{{ jwtClaims | json }}</pre>
+    </section>
+
+    <output *ngIf="successMessage" class="feedback success" aria-live="polite" aria-atomic="true">
+      {{ successMessage }}
+    </output>
+
+    <p *ngIf="errorMessage" class="feedback error" role="alert" aria-live="assertive" aria-atomic="true">
+      {{ errorMessage }}
+    </p>
   </mat-card-content>
 </mat-card>

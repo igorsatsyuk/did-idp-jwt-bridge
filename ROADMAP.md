@@ -17,7 +17,7 @@
 
 - [x] Angular DID UI scaffold
 - [x] Register DID page (generate key pair in-browser with ethers.js)
-- [ ] Auth flow page (challenge → sign → get JWT)
+- [x] Auth flow page (challenge → sign → get JWT)
 - [ ] Call protected Resource API and display claims
 
 ## Phase 4 — Enhancements
