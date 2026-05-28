@@ -75,7 +75,8 @@ class ChallengeServiceTest {
 
     @Test
     void constructor_rejectsInvalidMaxActiveConfig() {
-        assertThatThrownBy(() -> new ChallengeService(5, 0, Clock.systemUTC()))
+        Clock clock = Clock.systemUTC();
+        assertThatThrownBy(() -> new ChallengeService(5, 0, clock))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("challenge-max-active");
     }
