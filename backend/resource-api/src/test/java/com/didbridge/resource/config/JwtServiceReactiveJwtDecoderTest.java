@@ -39,8 +39,9 @@ class JwtServiceReactiveJwtDecoderTest {
     void decode_throwsJwtException_forInvalidToken() {
         JwtService jwtService = new JwtService(SECRET, 60);
         JwtServiceReactiveJwtDecoder decoder = new JwtServiceReactiveJwtDecoder(jwtService);
+        var decodedToken = decoder.decode("not-a-jwt");
 
-        assertThatThrownBy(() -> decoder.decode("not-a-jwt").block())
+        assertThatThrownBy(decodedToken::block)
                 .isInstanceOf(JwtException.class)
                 .hasMessageContaining("Invalid JWT token");
     }
@@ -50,8 +51,9 @@ class JwtServiceReactiveJwtDecoderTest {
         JwtService jwtService = new JwtService(SECRET, 60);
         JwtServiceReactiveJwtDecoder decoder = new JwtServiceReactiveJwtDecoder(jwtService);
         String tokenWithBlankSubject = jwtService.generateToken("", Map.of("role", "user"));
+        var decodedToken = decoder.decode(tokenWithBlankSubject);
 
-        assertThatThrownBy(() -> decoder.decode(tokenWithBlankSubject).block())
+        assertThatThrownBy(decodedToken::block)
                 .isInstanceOf(JwtException.class)
                 .hasMessageContaining("JWT subject (did) is required");
     }
