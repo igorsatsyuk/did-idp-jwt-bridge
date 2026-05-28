@@ -22,7 +22,7 @@ class SignatureVerifierTest {
     void verify_returnsTrue_forValidPrefixedSignature_withKnownKeyPair() {
         ECKeyPair keyPair = ECKeyPair.create(PRIVATE_KEY);
         String message = "challenge-123";
-        Sign.SignatureData sig = Sign.signPrefixedMessage(message.getBytes(), keyPair);
+        Sign.SignatureData sig = Sign.signPrefixedMessage(message.getBytes(StandardCharsets.UTF_8), keyPair);
 
         String signatureHex = toSignatureHex(sig);
         String expectedPublicKey = "0x" + keyPair.getPublicKey().toString(16);
@@ -42,7 +42,7 @@ class SignatureVerifierTest {
     @Test
     void verify_returnsFalse_forInvalidRecoveryIdByte() {
         ECKeyPair keyPair = ECKeyPair.create(PRIVATE_KEY);
-        Sign.SignatureData sig = Sign.signPrefixedMessage("challenge".getBytes(), keyPair);
+        Sign.SignatureData sig = Sign.signPrefixedMessage("challenge".getBytes(StandardCharsets.UTF_8), keyPair);
         byte[] signature = signatureToBytes(sig);
         signature[64] = 5;
 
@@ -53,7 +53,7 @@ class SignatureVerifierTest {
     @Test
     void verify_returnsFalse_whenMessageDiffersFromSignedMessage() {
         ECKeyPair keyPair = ECKeyPair.create(PRIVATE_KEY);
-        Sign.SignatureData sig = Sign.signPrefixedMessage("challenge-123".getBytes(), keyPair);
+        Sign.SignatureData sig = Sign.signPrefixedMessage("challenge-123".getBytes(StandardCharsets.UTF_8), keyPair);
         String signatureHex = toSignatureHex(sig);
         String expectedPublicKey = "0x" + keyPair.getPublicKey().toString(16);
 
@@ -63,7 +63,7 @@ class SignatureVerifierTest {
     @Test
     void verify_returnsFalse_forNonHexExpectedPublicKey() {
         ECKeyPair keyPair = ECKeyPair.create(PRIVATE_KEY);
-        Sign.SignatureData sig = Sign.signPrefixedMessage("challenge-123".getBytes(), keyPair);
+        Sign.SignatureData sig = Sign.signPrefixedMessage("challenge-123".getBytes(StandardCharsets.UTF_8), keyPair);
         String signatureHex = toSignatureHex(sig);
 
         assertThat(verifier.verify("challenge-123", signatureHex, "0xnot-hex")).isFalse();
@@ -120,6 +120,18 @@ class SignatureVerifierTest {
         assertThat(verifier.verify("challenge", "0xzz", expectedPublicKey)).isFalse();
     }
 
+    @Test
+    void verify_acceptsShortPublicKeyHexByLeftPadding() {
+        ECKeyPair keyPair = findKeyPairWithShortPublicKeyHex();
+        String message = "challenge-short-key";
+        Sign.SignatureData sig = Sign.signPrefixedMessage(message.getBytes(StandardCharsets.UTF_8), keyPair);
+        String signatureHex = toSignatureHex(sig);
+        String shortPublicKeyHex = "0x" + keyPair.getPublicKey().toString(16);
+
+        assertThat(shortPublicKeyHex.length()).isLessThan("0x".length() + 128);
+        assertThat(verifier.verify(message, signatureHex, shortPublicKeyHex)).isTrue();
+    }
+
     private static String toSignatureHex(Sign.SignatureData sig) {
         return Numeric.toHexString(signatureToBytes(sig));
     }
@@ -130,5 +142,15 @@ class SignatureVerifierTest {
         System.arraycopy(sig.getS(), 0, bytes, 32, 32);
         bytes[64] = sig.getV()[0];
         return bytes;
+    }
+
+    private static ECKeyPair findKeyPairWithShortPublicKeyHex() {
+        for (int i = 1; i <= 10_000; i++) {
+            ECKeyPair keyPair = ECKeyPair.create(BigInteger.valueOf(i));
+            if (keyPair.getPublicKey().toString(16).length() < 128) {
+                return keyPair;
+            }
+        }
+        throw new IllegalStateException("Could not find key pair with short public key hex");
     }
 }

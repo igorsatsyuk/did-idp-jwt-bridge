@@ -19,8 +19,8 @@ public class SignatureVerifier {
 
     private static final byte[] EMPTY_BYTES = new byte[0];
 
-    public boolean verify(String message, String signatureHex, String expectedPublicKeyHex) {
-        if (message == null || signatureHex == null || expectedPublicKeyHex == null) {
+    public boolean verify(String message, String signatureHex, String expectedSignerHex) {
+        if (message == null || signatureHex == null || expectedSignerHex == null) {
             return false;
         }
 
@@ -34,7 +34,7 @@ public class SignatureVerifier {
             return false;
         }
 
-        String expectedAddress = resolveExpectedAddress(expectedPublicKeyHex);
+        String expectedAddress = resolveExpectedAddress(expectedSignerHex);
         if (expectedAddress == null) {
             return false;
         }
@@ -74,8 +74,8 @@ public class SignatureVerifier {
         return null;
     }
 
-    private static String resolveExpectedAddress(String expectedPublicKeyHex) {
-        String cleanHex = Numeric.cleanHexPrefix(expectedPublicKeyHex);
+    private static String resolveExpectedAddress(String expectedSignerHex) {
+        String cleanHex = Numeric.cleanHexPrefix(expectedSignerHex);
         if (!isHex(cleanHex)) {
             return null;
         }
@@ -88,9 +88,10 @@ public class SignatureVerifier {
         if (normalizedPublicKey.length() == 130 && normalizedPublicKey.startsWith("04")) {
             normalizedPublicKey = normalizedPublicKey.substring(2);
         }
-        if (normalizedPublicKey.length() != 128) {
+        if (normalizedPublicKey.length() > 128) {
             return null;
         }
+        normalizedPublicKey = leftPadToLength(normalizedPublicKey, 128);
 
         try {
             return "0x" + Keys.getAddress(new BigInteger(normalizedPublicKey, 16));
@@ -109,5 +110,12 @@ public class SignatureVerifier {
             }
         }
         return true;
+    }
+
+    private static String leftPadToLength(String value, int expectedLength) {
+        if (value.length() >= expectedLength) {
+            return value;
+        }
+        return "0".repeat(expectedLength - value.length()) + value;
     }
 }
