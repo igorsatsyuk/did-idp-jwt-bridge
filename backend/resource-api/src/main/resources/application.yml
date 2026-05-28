@@ -4,11 +4,6 @@ server:
 spring:
   application:
     name: resource-api
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8082}
 
 management:
   endpoints:
