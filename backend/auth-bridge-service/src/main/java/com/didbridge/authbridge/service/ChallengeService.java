@@ -40,14 +40,17 @@ public class ChallengeService {
     }
 
     ChallengeService(long ttlMinutes, long maxActiveChallenges, String instanceId, Clock clock) {
-        if (ttlMinutes < 0) {
-            throw new IllegalArgumentException("auth.challenge-ttl-minutes must be >= 0");
+        if (ttlMinutes <= 0) {
+            throw new IllegalArgumentException("auth.challenge-ttl-minutes must be > 0");
         }
         if (maxActiveChallenges <= 0) {
             throw new IllegalArgumentException("auth.challenge-max-active must be > 0");
         }
         if (!StringUtils.hasText(instanceId)) {
             throw new IllegalArgumentException("auth.instance-id must not be blank");
+        }
+        if (instanceId.contains(CHALLENGE_SEPARATOR)) {
+            throw new IllegalArgumentException("auth.instance-id must not contain ':'");
         }
         this.ttlMinutes = ttlMinutes;
         this.maxActiveChallenges = maxActiveChallenges;

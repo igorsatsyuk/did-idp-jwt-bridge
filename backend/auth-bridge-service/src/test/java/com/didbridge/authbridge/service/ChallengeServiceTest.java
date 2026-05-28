@@ -3,7 +3,9 @@ package com.didbridge.authbridge.service;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -32,9 +34,10 @@ class ChallengeServiceTest {
 
     @Test
     void consumeOrThrow_rejectsExpiredChallenge() {
-        Clock fixed = Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC);
-        ChallengeService service = new ChallengeService(0, fixed);
+        MutableClock clock = new MutableClock(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC);
+        ChallengeService service = new ChallengeService(1, clock);
         String challenge = service.issueChallenge();
+        clock.advance(Duration.ofMinutes(1));
 
         assertThatThrownBy(() -> service.ensureActiveOrThrow(challenge))
                 .isInstanceOf(InvalidChallengeException.class)
@@ -79,6 +82,13 @@ class ChallengeServiceTest {
         assertThatThrownBy(() -> new ChallengeService(5, 0, clock))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("challenge-max-active");
+    }
+
+    @Test
+    void constructor_rejectsNonPositiveTtlConfig() {
+        assertThatThrownBy(() -> new ChallengeService(0, Clock.systemUTC()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("challenge-ttl-minutes");
     }
 
     @Test
@@ -129,5 +139,41 @@ class ChallengeServiceTest {
         assertThatThrownBy(() -> new ChallengeService(5, 10, " ", Clock.systemUTC()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("auth.instance-id");
+    }
+
+    @Test
+    void constructor_rejectsInstanceIdContainingSeparator() {
+        assertThatThrownBy(() -> new ChallengeService(5, 10, "node:a", Clock.systemUTC()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must not contain ':'");
+    }
+
+    private static final class MutableClock extends Clock {
+        private Instant current;
+        private final ZoneId zone;
+
+        private MutableClock(Instant current, ZoneId zone) {
+            this.current = current;
+            this.zone = zone;
+        }
+
+        @Override
+        public ZoneId getZone() {
+            return zone;
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return new MutableClock(current, zone);
+        }
+
+        @Override
+        public Instant instant() {
+            return current;
+        }
+
+        private void advance(Duration duration) {
+            current = current.plus(duration);
+        }
     }
 }
