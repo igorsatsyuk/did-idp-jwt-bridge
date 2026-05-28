@@ -52,7 +52,14 @@ mvn -pl auth-bridge-service -am spring-boot:run &
 mvn -pl resource-api -am spring-boot:run &
 ```
 
-### 4. Auth flow (curl)
+### 4. Run frontend (Angular DID UI)
+```bash
+cd frontend/did-ui
+npm install
+npm start
+```
+
+### 5. Auth flow (curl)
 ```bash
 # Register DID
 curl -X POST http://localhost:8081/did/register \

@@ -15,7 +15,7 @@
 
 ## Phase 3 — Frontend
 
-- [ ] Angular DID UI scaffold
+- [x] Angular DID UI scaffold
 - [ ] Register DID page (generate key pair in-browser with ethers.js)
 - [ ] Auth flow page (challenge → sign → get JWT)
 - [ ] Call protected Resource API and display claims

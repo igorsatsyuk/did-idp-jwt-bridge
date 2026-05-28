@@ -7,13 +7,16 @@ SUCCESS_STATES = {"success", "skipped", "neutral"}
 JOB_RESULT_FIELDS = (
     ("backend", "BACKEND_RESULT"),
     ("blockchain", "BLOCKCHAIN_RESULT"),
+    ("frontend", "FRONTEND_RESULT"),
     ("sonarqube-backend", "SONAR_BACKEND_RESULT"),
     ("sonarqube-blockchain", "SONAR_BLOCKCHAIN_RESULT"),
+    ("sonarqube-frontend", "SONAR_FRONTEND_RESULT"),
 )
 
 SONAR_SKIP_FLAGS = {
     "SONAR_BACKEND_RESULT": "SONAR_BACKEND_SKIPPED",
     "SONAR_BLOCKCHAIN_RESULT": "SONAR_BLOCKCHAIN_SKIPPED",
+    "SONAR_FRONTEND_RESULT": "SONAR_FRONTEND_SKIPPED",
 }
 
 
