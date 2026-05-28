@@ -158,7 +158,7 @@ export class Auth {
 
     try {
       const payload = parts[1];
-      const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const normalizedPayload = payload.replaceAll('-', '+').replaceAll('_', '/');
       const paddedPayload = normalizedPayload.padEnd(
         normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4),
         '='
