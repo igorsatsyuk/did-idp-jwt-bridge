@@ -3,6 +3,48 @@
     <mat-card-title>Register DID</mat-card-title>
   </mat-card-header>
   <mat-card-content>
-    <p>Register flow scaffold is ready. Key generation and DID submit form will be implemented in the next issue.</p>
+    <p class="subtitle">Generate an Ethereum key pair in-browser and register your DID in Identity Service.</p>
+
+    <button mat-flat-button type="button" color="primary" (click)="generateKeyPair()">
+      Generate key pair
+    </button>
+
+    <form class="register-form" [formGroup]="registerForm" (ngSubmit)="submitRegistration()">
+      <mat-form-field appearance="outline">
+        <mat-label>DID</mat-label>
+        <input matInput formControlName="did" placeholder="did:ethr:0x..." />
+        <mat-error *ngIf="registerForm.controls.did.touched && registerForm.controls.did.hasError('required')">
+          DID is required.
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Public key</mat-label>
+        <textarea matInput rows="4" formControlName="publicKey" placeholder="0x04..."></textarea>
+        <mat-error
+          *ngIf="
+            registerForm.controls.publicKey.touched &&
+            registerForm.controls.publicKey.hasError('required')
+          "
+        >
+          Public key is required.
+        </mat-error>
+      </mat-form-field>
+
+      <button mat-raised-button color="primary" type="submit" [disabled]="isSubmitting || registerForm.invalid">
+        Register DID
+      </button>
+    </form>
+
+    <p *ngIf="successMessage" class="feedback success">{{ successMessage }}</p>
+
+    <p *ngIf="errorMessage" class="feedback error">{{ errorMessage }}</p>
+
+    <section *ngIf="registeredDid" class="registered-result">
+      <h3>Registered DID</h3>
+      <p><strong>DID:</strong> {{ registeredDid.did }}</p>
+      <p><strong>Public key:</strong> {{ registeredDid.publicKey }}</p>
+      <p><strong>Status:</strong> {{ registeredDid.status }}</p>
+    </section>
   </mat-card-content>
 </mat-card>
