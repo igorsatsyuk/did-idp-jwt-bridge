@@ -21,6 +21,7 @@ services:
 auth:
   challenge-ttl-minutes: ${AUTH_CHALLENGE_TTL_MINUTES:5}
   challenge-max-active: ${AUTH_CHALLENGE_MAX_ACTIVE:10000}
+  instance-id: ${AUTH_INSTANCE_ID:${HOSTNAME:auth-bridge-service}}
 
 blockchain:
   rpc-url: http://localhost:8545

@@ -111,4 +111,23 @@ class ChallengeServiceTest {
             executor.shutdownNow();
         }
     }
+
+    @Test
+    void ensureActiveOrThrow_rejectsChallengeIssuedByDifferentInstance() {
+        Clock fixed = Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC);
+        ChallengeService issuer = new ChallengeService(5, 10, "instance-a", fixed);
+        ChallengeService validator = new ChallengeService(5, 10, "instance-b", fixed);
+        String challenge = issuer.issueChallenge();
+
+        assertThatThrownBy(() -> validator.ensureActiveOrThrow(challenge))
+                .isInstanceOf(InvalidChallengeException.class)
+                .hasMessageContaining("different auth-bridge instance");
+    }
+
+    @Test
+    void constructor_rejectsBlankInstanceId() {
+        assertThatThrownBy(() -> new ChallengeService(5, 10, " ", Clock.systemUTC()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("auth.instance-id");
+    }
 }
