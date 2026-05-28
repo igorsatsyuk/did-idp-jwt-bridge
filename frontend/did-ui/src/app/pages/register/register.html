@@ -55,9 +55,13 @@
       </button>
     </form>
 
-    <p *ngIf="successMessage" class="feedback success">{{ successMessage }}</p>
+    <p *ngIf="successMessage" class="feedback success" role="status" aria-live="polite" aria-atomic="true">
+      {{ successMessage }}
+    </p>
 
-    <p *ngIf="errorMessage" class="feedback error">{{ errorMessage }}</p>
+    <p *ngIf="errorMessage" class="feedback error" role="alert" aria-live="assertive" aria-atomic="true">
+      {{ errorMessage }}
+    </p>
 
     <section *ngIf="registeredDid" class="registered-result">
       <h3>Registered DID</h3>

@@ -85,6 +85,9 @@ describe('Register', () => {
     expect(component.successMessage).toBeNull();
     expect(component.registeredDid).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('DID already registered');
+    const alertElement = fixture.nativeElement.querySelector('.feedback.error');
+    expect(alertElement?.getAttribute('role')).toBe('alert');
+    expect(alertElement?.getAttribute('aria-live')).toBe('assertive');
   });
 
   it('does not submit when form is invalid', async () => {
