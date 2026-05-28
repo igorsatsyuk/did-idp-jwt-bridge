@@ -1,3 +1,57 @@
 mat-card {
   max-width: 720px;
 }
+
+.subtitle {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.register-form {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.key-backup {
+  margin-top: 0.5rem;
+}
+
+.backup-title {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+
+.backup-note {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #37474f;
+}
+
+.checkbox-error {
+  margin: 0;
+  color: #b71c1c;
+  font-size: 0.9rem;
+}
+
+.feedback {
+  margin-top: 1rem;
+}
+
+.success {
+  color: #1b5e20;
+}
+
+.error {
+  color: #b71c1c;
+}
+
+.registered-result {
+  margin-top: 1rem;
+  overflow-wrap: anywhere;
+}
