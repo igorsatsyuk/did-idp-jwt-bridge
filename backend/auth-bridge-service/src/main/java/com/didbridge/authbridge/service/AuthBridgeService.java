@@ -46,8 +46,11 @@ public class AuthBridgeService {
                         .retrieve()
                         .bodyToMono(DidDocument.class)))
                 .flatMap(doc -> {
+                    if (doc.status() == DidStatus.REVOKED) {
+                        return Mono.error(new DidRevokedException(request.did()));
+                    }
                     if (doc.status() != DidStatus.ACTIVE) {
-                        return Mono.error(new IllegalStateException("DID is not active"));
+                        return Mono.error(new IllegalStateException("Unsupported DID status: " + doc.status()));
                     }
                     if (!signatureVerifier.verify(request.challenge(), request.signature(), doc.publicKey())) {
                         return Mono.error(new IllegalArgumentException("Invalid signature"));

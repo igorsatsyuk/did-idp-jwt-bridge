@@ -82,7 +82,7 @@ class AuthBridgeServiceTest {
     }
 
     @Test
-    void authenticate_returnsError_whenDidNotActive() {
+    void authenticate_returnsUnauthorized_whenDidRevoked() {
         AuthRequest request = new AuthRequest("did:example:alice", "challenge-1", "0xsignature");
         DidDocument doc = new DidDocument(
                 request.did(), "0xpublic", DidStatus.REVOKED, Instant.now(), Instant.now());
@@ -93,8 +93,8 @@ class AuthBridgeServiceTest {
 
         Mono<AuthResponse> authMono = service.authenticate(request);
         assertThatThrownBy(authMono::block)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("not active");
+                .isInstanceOf(DidRevokedException.class)
+                .hasMessageContaining("revoked");
         verify(challengeService).ensureActiveOrThrow(request.challenge());
         verify(challengeService, never()).consumeOrThrow(request.challenge());
     }

@@ -40,6 +40,10 @@ export class Api {
     return this.http.post<DidDocument>('/did/register', payload);
   }
 
+  revokeDid(did: string): Observable<void> {
+    return this.http.delete<void>(`/did/${did}/revoke`);
+  }
+
   getChallenge(): Observable<string> {
     return this.http.get('/auth/challenge', { responseType: 'text' });
   }

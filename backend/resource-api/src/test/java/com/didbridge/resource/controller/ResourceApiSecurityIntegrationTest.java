@@ -15,8 +15,12 @@ import java.util.Map;
 )
 class ResourceApiSecurityIntegrationTest {
 
+    private final JwtService jwtService;
+
     @Autowired
-    private JwtService jwtService;
+    ResourceApiSecurityIntegrationTest(JwtService jwtService) {
+        this.jwtService = jwtService;
+    }
 
     @LocalServerPort
     private int port;

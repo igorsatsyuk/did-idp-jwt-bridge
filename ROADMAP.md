@@ -22,7 +22,7 @@
 
 ## Phase 4 — Enhancements
 
-- [ ] DID revocation — full flow (contract + API + UI)
+- [x] DID revocation — full flow (contract + API + UI)
 - [ ] Architecture diagrams (C4 context, sequence)
 - [ ] Key rotation (`updatePublicKey` in DidRegistry)
 - [ ] JWT refresh token mechanism

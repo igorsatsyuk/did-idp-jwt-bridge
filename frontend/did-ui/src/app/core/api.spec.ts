@@ -40,6 +40,16 @@ describe('Api', () => {
     });
   });
 
+  it('sends revoke DID request', () => {
+    const did = 'did:ethr:0x1111111111111111111111111111111111111111';
+
+    service.revokeDid(did).subscribe();
+
+    const request = httpMock.expectOne(`/did/${did}/revoke`);
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null);
+  });
+
   it('gets challenge as text', () => {
     service.getChallenge().subscribe((challenge) => {
       expect(challenge).toBe('nonce-123');

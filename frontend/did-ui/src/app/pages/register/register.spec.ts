@@ -17,6 +17,7 @@ describe('Register', () => {
   let component: Register;
   let fixture: ComponentFixture<Register>;
   let httpMock: HttpTestingController;
+  let confirmSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -28,6 +29,7 @@ describe('Register', () => {
     component = fixture.componentInstance;
     httpMock = TestBed.inject(HttpTestingController);
     vi.spyOn(Wallet, 'createRandom').mockReturnValue(MOCK_WALLET);
+    confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     await fixture.whenStable();
   });
 
@@ -141,6 +143,63 @@ describe('Register', () => {
     httpMock.expectNone('/did/register');
     expect(component.errorMessage).toBe('Generate a key pair before registration.');
     expect(component.isSubmitting).toBe(false);
+  });
+
+  it('revokes registered DID after confirmation', () => {
+    component.registeredDid = {
+      did: 'did:ethr:0x1111111111111111111111111111111111111111',
+      publicKey: '0x04abc',
+      status: 'ACTIVE',
+      createdAt: '2026-05-01T00:00:00Z',
+      updatedAt: '2026-05-01T00:00:00Z'
+    };
+    confirmSpy.mockReturnValue(true);
+
+    component.revokeRegisteredDid();
+
+    const request = httpMock.expectOne('/did/did:ethr:0x1111111111111111111111111111111111111111/revoke');
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null);
+
+    expect(component.registeredDid?.status).toBe('REVOKED');
+    expect(component.successMessage).toContain('has been revoked');
+    expect(component.isRevoking).toBe(false);
+  });
+
+  it('does not revoke when confirmation is canceled', () => {
+    component.registeredDid = {
+      did: 'did:ethr:0x1111111111111111111111111111111111111111',
+      publicKey: '0x04abc',
+      status: 'ACTIVE',
+      createdAt: '2026-05-01T00:00:00Z',
+      updatedAt: '2026-05-01T00:00:00Z'
+    };
+    confirmSpy.mockReturnValue(false);
+
+    component.revokeRegisteredDid();
+
+    httpMock.expectNone('/did/did:ethr:0x1111111111111111111111111111111111111111/revoke');
+    expect(component.registeredDid?.status).toBe('ACTIVE');
+  });
+
+  it('shows error when revoke request fails', () => {
+    component.registeredDid = {
+      did: 'did:ethr:0x1111111111111111111111111111111111111111',
+      publicKey: '0x04abc',
+      status: 'ACTIVE',
+      createdAt: '2026-05-01T00:00:00Z',
+      updatedAt: '2026-05-01T00:00:00Z'
+    };
+    confirmSpy.mockReturnValue(true);
+
+    component.revokeRegisteredDid();
+
+    const request = httpMock.expectOne('/did/did:ethr:0x1111111111111111111111111111111111111111/revoke');
+    request.flush({ message: 'Only owner can revoke this DID' }, { status: 403, statusText: 'Forbidden' });
+
+    expect(component.errorMessage).toBe('Only owner can revoke this DID');
+    expect(component.registeredDid?.status).toBe('ACTIVE');
+    expect(component.isRevoking).toBe(false);
   });
 
   afterEach(() => {

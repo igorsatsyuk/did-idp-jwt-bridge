@@ -68,6 +68,19 @@
       <p><strong>DID:</strong> {{ registeredDid.did }}</p>
       <p><strong>Public key:</strong> {{ registeredDid.publicKey }}</p>
       <p><strong>Status:</strong> {{ registeredDid.status }}</p>
+      <button
+        *ngIf="registeredDid.status === 'ACTIVE'"
+        mat-stroked-button
+        color="warn"
+        type="button"
+        (click)="revokeRegisteredDid()"
+        [disabled]="isRevoking"
+      >
+        Revoke DID
+      </button>
+      <p *ngIf="registeredDid.status === 'REVOKED'" class="revoked-note">
+        This DID is revoked and can no longer be used to obtain JWT.
+      </p>
     </section>
   </mat-card-content>
 </mat-card>
