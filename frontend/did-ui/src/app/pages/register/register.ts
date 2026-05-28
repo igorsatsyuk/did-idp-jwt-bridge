@@ -11,6 +11,7 @@ import { Wallet } from 'ethers';
 import { finalize } from 'rxjs';
 
 import { Api, DidDocument, RegisterDidRequest } from '../../core/api';
+import { formatHttpErrorMessage } from '../../core/http-error';
 
 interface GeneratedWalletSnapshot {
   did: string;
@@ -44,6 +45,7 @@ export class Register {
   });
 
   isSubmitting = false;
+  isRevoking = false;
   successMessage: string | null = null;
   errorMessage: string | null = null;
   registeredDid: DidDocument | null = null;
@@ -110,26 +112,45 @@ export class Register {
           this.successMessage = `DID ${document.did} has been registered.`;
         },
         error: (error: HttpErrorResponse) => {
-          this.errorMessage = this.formatErrorMessage(error);
+          this.errorMessage = formatHttpErrorMessage(error, 'Registration failed');
         }
       });
   }
 
-  private formatErrorMessage(error: HttpErrorResponse): string {
-    if (typeof error.error === 'string' && error.error.trim().length > 0) {
-      return error.error;
+  revokeRegisteredDid(): void {
+    if (this.registeredDid === null || this.registeredDid.status === 'REVOKED') {
+      return;
     }
 
-    if (
-      typeof error.error === 'object' &&
-      error.error !== null &&
-      'message' in error.error &&
-      typeof error.error.message === 'string' &&
-      error.error.message.trim().length > 0
-    ) {
-      return error.error.message;
+    const shouldRevoke = window.confirm(
+      `Revoke DID ${this.registeredDid.did}? This action will block JWT issuance for this DID.`
+    );
+    if (!shouldRevoke) {
+      return;
     }
 
-    return `Registration failed (HTTP ${error.status || 'unknown'})`;
+    this.errorMessage = null;
+    this.successMessage = null;
+    this.isRevoking = true;
+    const didDocument = this.registeredDid;
+    const didToRevoke = didDocument.did;
+
+    this.api
+      .revokeDid(didToRevoke)
+      .pipe(finalize(() => (this.isRevoking = false)))
+      .subscribe({
+        next: () => {
+          const revokedAt = new Date().toISOString();
+          this.registeredDid = {
+            ...didDocument,
+            status: 'REVOKED',
+            updatedAt: revokedAt
+          };
+          this.successMessage = `DID ${didToRevoke} has been revoked.`;
+        },
+        error: (error: HttpErrorResponse) => {
+          this.errorMessage = formatHttpErrorMessage(error, 'DID revocation failed');
+        }
+      });
   }
 }
