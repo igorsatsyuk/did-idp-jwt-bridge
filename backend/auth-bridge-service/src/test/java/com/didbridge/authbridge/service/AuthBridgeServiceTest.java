@@ -83,7 +83,8 @@ class AuthBridgeServiceTest {
                 .thenReturn((WebClient.RequestHeadersSpec) requestHeadersSpec);
         when(responseSpec.bodyToMono(DidDocument.class)).thenReturn(Mono.just(doc));
 
-        assertThatThrownBy(() -> service.authenticate(request).block())
+        Mono<AuthResponse> authMono = service.authenticate(request);
+        assertThatThrownBy(authMono::block)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("not active");
     }
@@ -99,7 +100,8 @@ class AuthBridgeServiceTest {
         when(responseSpec.bodyToMono(DidDocument.class)).thenReturn(Mono.just(doc));
         when(signatureVerifier.verify(request.challenge(), request.signature(), doc.publicKey())).thenReturn(false);
 
-        assertThatThrownBy(() -> service.authenticate(request).block())
+        Mono<AuthResponse> authMono = service.authenticate(request);
+        assertThatThrownBy(authMono::block)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Invalid signature");
     }
