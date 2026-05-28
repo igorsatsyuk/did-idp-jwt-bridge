@@ -55,4 +55,22 @@ class ChallengeServiceTest {
 
         assertThat(challenge).isNotBlank();
     }
+
+    @Test
+    void issueChallenge_rejectsWhenCapacityExceeded() {
+        Clock fixed = Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC);
+        ChallengeService service = new ChallengeService(5, 1, fixed);
+        service.issueChallenge();
+
+        assertThatThrownBy(service::issueChallenge)
+                .isInstanceOf(ChallengeCapacityExceededException.class)
+                .hasMessageContaining("Too many active challenges");
+    }
+
+    @Test
+    void constructor_rejectsInvalidMaxActiveConfig() {
+        assertThatThrownBy(() -> new ChallengeService(5, 0, Clock.systemUTC()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("challenge-max-active");
+    }
 }
