@@ -65,11 +65,13 @@ curl http://localhost:8082/auth/challenge
 # Get JWT
 curl -X POST http://localhost:8082/auth/token \
   -H "Content-Type: application/json" \
-  -d '{"did":"did:example:alice","challenge":"<uuid>","signature":"0x..."}'
+  -d '{"did":"did:example:alice","challenge":"<challenge-from-/auth/challenge>","signature":"0x..."}'
 
 # Call protected API
 curl http://localhost:8083/api/me -H "Authorization: Bearer <jwt>"
 ```
+
+> `auth-bridge-service` keeps active challenges in-memory. In multi-instance deployments, configure sticky routing for `/auth/challenge` and `/auth/token` to the same instance (or use a shared challenge store).
 
 ## Roadmap
 
