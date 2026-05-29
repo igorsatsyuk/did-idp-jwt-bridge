@@ -8,6 +8,7 @@ import com.didbridge.security.JwtService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
@@ -95,6 +96,8 @@ public class AuthBridgeService {
                             .uri("/did/{did}", did)
                             .retrieve()
                             .bodyToMono(DidDocument.class)
+                            .onErrorMap(WebClientResponseException.class,
+                                    _ -> new InvalidRefreshTokenException("Refresh token is invalid"))
                             .flatMap(doc -> {
                                 if (doc.status() == DidStatus.REVOKED) {
                                     return Mono.error(new DidRevokedException(did));

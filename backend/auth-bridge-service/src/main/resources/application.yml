@@ -26,6 +26,7 @@ auth:
   token-rate-limit:
     max-attempts: ${AUTH_TOKEN_RATE_LIMIT_MAX_ATTEMPTS:10}
     window-seconds: ${AUTH_TOKEN_RATE_LIMIT_WINDOW_SECONDS:60}
+    max-tracked-keys: ${AUTH_TOKEN_RATE_LIMIT_MAX_TRACKED_KEYS:10000}
 
 blockchain:
   rpc-url: http://localhost:8545

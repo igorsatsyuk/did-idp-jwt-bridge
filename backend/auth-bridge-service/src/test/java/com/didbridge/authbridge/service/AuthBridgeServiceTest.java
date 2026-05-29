@@ -11,9 +11,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -162,7 +165,8 @@ class AuthBridgeServiceTest {
         doThrow(new TokenRateLimitExceededException("Too many token requests"))
                 .when(authTokenRateLimiter).enforceOrThrow(request.did());
 
-        assertThatThrownBy(() -> service.authenticate(request).block())
+        Mono<AuthResponse> authMono = service.authenticate(request);
+        assertThatThrownBy(authMono::block)
                 .isInstanceOf(TokenRateLimitExceededException.class)
                 .hasMessageContaining("Too many token requests");
     }
@@ -201,8 +205,32 @@ class AuthBridgeServiceTest {
         when(claims.get("token_type", String.class)).thenReturn("access");
         when(jwtService.parseToken("not-refresh")).thenReturn(claims);
 
-        assertThatThrownBy(() -> service.refreshAccessToken("not-refresh").block())
+        Mono<AuthResponse> refreshMono = service.refreshAccessToken("not-refresh");
+        assertThatThrownBy(refreshMono::block)
                 .isInstanceOf(InvalidRefreshTokenException.class)
                 .hasMessageContaining("not a refresh token");
+    }
+
+    @Test
+    void refreshAccessToken_throwsInvalidRefreshTokenException_whenIdentityServiceErrors() {
+        Claims claims = mock(Claims.class);
+        when(claims.getSubject()).thenReturn("did:example:alice");
+        when(claims.get("token_type", String.class)).thenReturn("refresh");
+        when(jwtService.parseToken("refresh-token")).thenReturn(claims);
+        when(requestHeadersUriSpec.uri("/did/{did}", "did:example:alice"))
+                .thenReturn((WebClient.RequestHeadersSpec) requestHeadersSpec);
+        when(responseSpec.bodyToMono(DidDocument.class)).thenReturn(Mono.error(
+                WebClientResponseException.create(
+                        404,
+                        "Not Found",
+                        HttpHeaders.EMPTY,
+                        new byte[0],
+                        StandardCharsets.UTF_8
+                )));
+
+        Mono<AuthResponse> refreshMono = service.refreshAccessToken("refresh-token");
+        assertThatThrownBy(refreshMono::block)
+                .isInstanceOf(InvalidRefreshTokenException.class)
+                .hasMessageContaining("Refresh token is invalid");
     }
 }

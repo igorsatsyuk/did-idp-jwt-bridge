@@ -16,6 +16,7 @@ class AuthTokenRateLimiterTest {
         AuthTokenRateLimiter limiter = new AuthTokenRateLimiter(
                 2,
                 60,
+                100,
                 Clock.fixed(now, ZoneOffset.UTC)
         );
 
@@ -29,8 +30,27 @@ class AuthTokenRateLimiterTest {
 
     @Test
     void constructor_throwsWhenWindowSecondsInvalid() {
-        assertThatThrownBy(() -> new AuthTokenRateLimiter(1, 0, Clock.systemUTC()))
+        Clock clock = Clock.systemUTC();
+        assertThatThrownBy(() -> new AuthTokenRateLimiter(1, 0, 10, clock))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("window-seconds");
+    }
+
+    @Test
+    void enforceOrThrow_throwsWhenTrackedKeysLimitExceeded() {
+        Instant now = Instant.parse("2026-01-01T00:00:00Z");
+        AuthTokenRateLimiter limiter = new AuthTokenRateLimiter(
+                2,
+                60,
+                2,
+                Clock.fixed(now, ZoneOffset.UTC)
+        );
+
+        limiter.enforceOrThrow("did:example:alice");
+        limiter.enforceOrThrow("did:example:bob");
+
+        assertThatThrownBy(() -> limiter.enforceOrThrow("did:example:charlie"))
+                .isInstanceOf(TokenRateLimitExceededException.class)
+                .hasMessageContaining("distinct token request keys");
     }
 }
