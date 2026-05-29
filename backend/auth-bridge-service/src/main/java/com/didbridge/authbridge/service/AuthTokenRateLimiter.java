@@ -45,7 +45,7 @@ public class AuthTokenRateLimiter {
         this.clock = clock;
     }
 
-    public void enforceOrThrow(String key) {
+    public synchronized void enforceOrThrow(String key) {
         if (key == null || key.isBlank()) {
             throw new IllegalArgumentException("Rate limit key must not be blank");
         }
