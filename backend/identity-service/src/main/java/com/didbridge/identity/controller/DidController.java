@@ -10,6 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+
 @RestController
 @RequestMapping("/did")
 public class DidController {
@@ -55,7 +58,13 @@ public class DidController {
     }
 
     private void ensureKeyRotationAuthorized(String requestToken) {
-        if (!keyRotationToken.equals(requestToken)) {
+        if (requestToken == null || requestToken.isBlank()) {
+            throw new KeyRotationAuthorizationException();
+        }
+        if (!MessageDigest.isEqual(
+                keyRotationToken.getBytes(StandardCharsets.UTF_8),
+                requestToken.getBytes(StandardCharsets.UTF_8)
+        )) {
             throw new KeyRotationAuthorizationException();
         }
     }

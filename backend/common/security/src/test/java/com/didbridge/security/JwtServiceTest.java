@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class JwtServiceTest {
 
@@ -50,5 +51,17 @@ class JwtServiceTest {
 
         assertThat(claims.getSubject()).isEqualTo("did:example:alice");
         assertThat(claims.get("token_type", String.class)).isEqualTo("refresh");
+    }
+
+    @Test
+    void generateToken_throws_whenCustomExpirationNotPositive() {
+        JwtService service = new JwtService(SECRET, 60);
+
+        assertThatThrownBy(() -> service.generateToken("did:example:alice", Map.of(), 0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must be positive");
+        assertThatThrownBy(() -> service.generateToken("did:example:alice", Map.of(), -1))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must be positive");
     }
 }

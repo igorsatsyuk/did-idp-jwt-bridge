@@ -83,4 +83,22 @@ class DidControllerTest {
         assertThatThrownBy(() -> controller.updateKey("did:example:alice", request, "wrong-token"))
                 .isInstanceOf(KeyRotationAuthorizationException.class);
     }
+
+    @Test
+    void updateKey_throwsWhenAuthorizationTokenMissing() {
+        DidController controller = new DidController(didRegistryService, KEY_ROTATION_TOKEN);
+        UpdateDidKeyRequest request = new UpdateDidKeyRequest("0xnew-pub");
+
+        assertThatThrownBy(() -> controller.updateKey("did:example:alice", request, null))
+                .isInstanceOf(KeyRotationAuthorizationException.class);
+    }
+
+    @Test
+    void updateKey_throwsWhenAuthorizationTokenBlank() {
+        DidController controller = new DidController(didRegistryService, KEY_ROTATION_TOKEN);
+        UpdateDidKeyRequest request = new UpdateDidKeyRequest("0xnew-pub");
+
+        assertThatThrownBy(() -> controller.updateKey("did:example:alice", request, "   "))
+                .isInstanceOf(KeyRotationAuthorizationException.class);
+    }
 }

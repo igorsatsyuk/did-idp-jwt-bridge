@@ -32,6 +32,9 @@ public class JwtService {
     }
 
     public String generateToken(String did, Map<String, Object> extraClaims, long tokenExpirationMinutes) {
+        if (tokenExpirationMinutes <= 0) {
+            throw new IllegalArgumentException("tokenExpirationMinutes must be positive");
+        }
         Instant now = Instant.now();
         return Jwts.builder()
                 .subject(did)

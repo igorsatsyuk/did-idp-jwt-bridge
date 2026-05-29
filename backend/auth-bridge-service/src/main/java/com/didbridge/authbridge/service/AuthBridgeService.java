@@ -55,7 +55,7 @@ public class AuthBridgeService {
 
     public Mono<AuthResponse> authenticate(AuthRequest request, String clientAddress) {
         return Mono.fromRunnable(() -> {
-                    authTokenRateLimiter.enforceOrThrow(rateLimitKey(clientAddress, request.did()));
+                    authTokenRateLimiter.enforceOrThrow(rateLimitKey(clientAddress));
                     challengeService.ensureActiveOrThrow(request.challenge());
                 })
                 .then(Mono.defer(() -> identityClient.get()
@@ -111,8 +111,8 @@ public class AuthBridgeService {
                 });
     }
 
-    private static String rateLimitKey(String clientAddress, String did) {
-        return clientAddress + "|" + did;
+    private static String rateLimitKey(String clientAddress) {
+        return clientAddress;
     }
 
     private AuthResponse buildTokenResponse(String did) {

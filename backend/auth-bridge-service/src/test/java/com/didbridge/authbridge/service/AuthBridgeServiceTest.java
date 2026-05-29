@@ -99,7 +99,7 @@ class AuthBridgeServiceTest {
         AuthResponse response = service.authenticate(request, CLIENT_ADDRESS).block();
 
         assertThat(response).isEqualTo(new AuthResponse("jwt-token", "Bearer", 3600, "refresh-token", 604800));
-        verify(authTokenRateLimiter).enforceOrThrow(CLIENT_ADDRESS + "|" + request.did());
+        verify(authTokenRateLimiter).enforceOrThrow(CLIENT_ADDRESS);
         verify(challengeService).ensureActiveOrThrow(request.challenge());
         verify(challengeService).consumeOrThrow(request.challenge());
     }
@@ -118,7 +118,7 @@ class AuthBridgeServiceTest {
         assertThatThrownBy(authMono::block)
                 .isInstanceOf(DidRevokedException.class)
                 .hasMessageContaining("revoked");
-        verify(authTokenRateLimiter).enforceOrThrow(CLIENT_ADDRESS + "|" + request.did());
+        verify(authTokenRateLimiter).enforceOrThrow(CLIENT_ADDRESS);
         verify(challengeService).ensureActiveOrThrow(request.challenge());
         verify(challengeService, never()).consumeOrThrow(request.challenge());
     }
@@ -138,7 +138,7 @@ class AuthBridgeServiceTest {
         assertThatThrownBy(authMono::block)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Invalid signature");
-        verify(authTokenRateLimiter).enforceOrThrow(CLIENT_ADDRESS + "|" + request.did());
+        verify(authTokenRateLimiter).enforceOrThrow(CLIENT_ADDRESS);
         verify(challengeService).ensureActiveOrThrow(request.challenge());
         verify(challengeService, never()).consumeOrThrow(request.challenge());
     }
@@ -153,7 +153,7 @@ class AuthBridgeServiceTest {
         assertThatThrownBy(authMono::block)
                 .isInstanceOf(InvalidChallengeException.class)
                 .hasMessageContaining("invalid, expired, or already used");
-        verify(authTokenRateLimiter).enforceOrThrow(CLIENT_ADDRESS + "|" + request.did());
+        verify(authTokenRateLimiter).enforceOrThrow(CLIENT_ADDRESS);
     }
 
     @Test
@@ -169,7 +169,7 @@ class AuthBridgeServiceTest {
     void authenticate_returnsTooManyRequests_whenRateLimitExceeded() {
         AuthRequest request = new AuthRequest("did:example:alice", "challenge-1", "0xsignature");
         doThrow(new TokenRateLimitExceededException("Too many token requests"))
-                .when(authTokenRateLimiter).enforceOrThrow(CLIENT_ADDRESS + "|" + request.did());
+                .when(authTokenRateLimiter).enforceOrThrow(CLIENT_ADDRESS);
 
         Mono<AuthResponse> authMono = service.authenticate(request, CLIENT_ADDRESS);
         assertThatThrownBy(authMono::block)

@@ -15,7 +15,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,7 +32,33 @@ class AuthControllerTest {
         AuthResponse response = new AuthResponse("jwt", "Bearer", 3600, "refresh", 604800);
         when(serverHttpRequest.getRemoteAddress()).thenReturn(
                 new InetSocketAddress(InetAddress.getLoopbackAddress(), 12345));
-        when(authBridgeService.authenticate(eq(request), eq("127.0.0.1"))).thenReturn(Mono.just(response));
+        when(authBridgeService.authenticate(request, "127.0.0.1")).thenReturn(Mono.just(response));
+
+        AuthResponse result = controller.token(request, serverHttpRequest).block();
+
+        assertThat(result).isEqualTo(response);
+    }
+
+    @Test
+    void token_usesUnknownClient_whenRemoteAddressMissing() {
+        AuthController controller = new AuthController(authBridgeService);
+        AuthRequest request = new AuthRequest("did:example:alice", "challenge", "0xsignature");
+        AuthResponse response = new AuthResponse("jwt", "Bearer", 3600, "refresh", 604800);
+        when(serverHttpRequest.getRemoteAddress()).thenReturn(null);
+        when(authBridgeService.authenticate(request, "unknown-client")).thenReturn(Mono.just(response));
+
+        AuthResponse result = controller.token(request, serverHttpRequest).block();
+
+        assertThat(result).isEqualTo(response);
+    }
+
+    @Test
+    void token_usesUnknownClient_whenRemoteAddressIsUnresolved() {
+        AuthController controller = new AuthController(authBridgeService);
+        AuthRequest request = new AuthRequest("did:example:alice", "challenge", "0xsignature");
+        AuthResponse response = new AuthResponse("jwt", "Bearer", 3600, "refresh", 604800);
+        when(serverHttpRequest.getRemoteAddress()).thenReturn(InetSocketAddress.createUnresolved("client", 12345));
+        when(authBridgeService.authenticate(request, "unknown-client")).thenReturn(Mono.just(response));
 
         AuthResponse result = controller.token(request, serverHttpRequest).block();
 
