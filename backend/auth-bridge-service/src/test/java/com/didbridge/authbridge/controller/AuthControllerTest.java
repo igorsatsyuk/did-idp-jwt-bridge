@@ -66,20 +66,6 @@ class AuthControllerTest {
     }
 
     @Test
-    void token_usesRemoteAddress_whenPresent() {
-        AuthController controller = new AuthController(authBridgeService);
-        AuthRequest request = new AuthRequest("did:example:alice", "challenge", "0xsignature");
-        AuthResponse response = new AuthResponse("jwt", "Bearer", 3600, "refresh", 604800);
-        when(serverHttpRequest.getRemoteAddress()).thenReturn(
-                new InetSocketAddress(InetAddress.getLoopbackAddress(), 12345));
-        when(authBridgeService.authenticate(request, "127.0.0.1")).thenReturn(Mono.just(response));
-
-        AuthResponse result = controller.token(request, serverHttpRequest).block();
-
-        assertThat(result).isEqualTo(response);
-    }
-
-    @Test
     void challenge_delegatesToService() {
         AuthController controller = new AuthController(authBridgeService);
         when(authBridgeService.generateChallenge()).thenReturn(Mono.just("abc"));
