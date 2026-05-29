@@ -17,4 +17,4 @@ blockchain:
   account-private-key: ${BLOCKCHAIN_ACCOUNT_PRIVATE_KEY:${BLOCKCHAIN_PRIVATE_KEY:}}
 
 security:
-  key-rotation-token: ${IDENTITY_KEY_ROTATION_TOKEN:change-me-key-rotation-token}
+  key-rotation-token: ${IDENTITY_KEY_ROTATION_TOKEN}

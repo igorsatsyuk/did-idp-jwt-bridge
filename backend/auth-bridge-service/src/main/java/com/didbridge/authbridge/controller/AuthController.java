@@ -4,8 +4,11 @@ import com.didbridge.authbridge.dto.AuthRequest;
 import com.didbridge.authbridge.dto.AuthResponse;
 import com.didbridge.authbridge.dto.RefreshTokenRequest;
 import com.didbridge.authbridge.service.AuthBridgeService;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+
+import java.net.InetSocketAddress;
 
 @RestController
 @RequestMapping("/auth")
@@ -18,8 +21,11 @@ public class AuthController {
     }
 
     @PostMapping("/token")
-    public Mono<AuthResponse> token(@RequestBody AuthRequest request) {
-        return authBridgeService.authenticate(request);
+    public Mono<AuthResponse> token(
+            @RequestBody AuthRequest authRequest,
+            ServerHttpRequest serverHttpRequest
+    ) {
+        return authBridgeService.authenticate(authRequest, resolveClientAddress(serverHttpRequest));
     }
 
     @PostMapping("/refresh")
@@ -30,5 +36,13 @@ public class AuthController {
     @GetMapping("/challenge")
     public Mono<String> challenge() {
         return authBridgeService.generateChallenge();
+    }
+
+    private static String resolveClientAddress(ServerHttpRequest request) {
+        InetSocketAddress remoteAddress = request.getRemoteAddress();
+        if (remoteAddress == null || remoteAddress.getAddress() == null) {
+            return "unknown-client";
+        }
+        return remoteAddress.getAddress().getHostAddress();
     }
 }

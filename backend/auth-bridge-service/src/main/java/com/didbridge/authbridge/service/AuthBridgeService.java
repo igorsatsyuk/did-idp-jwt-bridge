@@ -8,6 +8,7 @@ import com.didbridge.security.JwtService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
@@ -52,9 +53,9 @@ public class AuthBridgeService {
         this.refreshTokenExpirationMinutes = refreshTokenExpirationMinutes;
     }
 
-    public Mono<AuthResponse> authenticate(AuthRequest request) {
+    public Mono<AuthResponse> authenticate(AuthRequest request, String clientAddress) {
         return Mono.fromRunnable(() -> {
-                    authTokenRateLimiter.enforceOrThrow(request.did());
+                    authTokenRateLimiter.enforceOrThrow(rateLimitKey(clientAddress, request.did()));
                     challengeService.ensureActiveOrThrow(request.challenge());
                 })
                 .then(Mono.defer(() -> identityClient.get()
@@ -96,6 +97,8 @@ public class AuthBridgeService {
                             .uri("/did/{did}", did)
                             .retrieve()
                             .bodyToMono(DidDocument.class)
+                            .onErrorMap(WebClientRequestException.class,
+                                    ex -> new IdentityServiceUnavailableException("Identity service request failed", ex))
                             .onErrorMap(WebClientResponseException.class, ex -> ex.getStatusCode().is4xxClientError()
                                     ? new InvalidRefreshTokenException("Refresh token is invalid")
                                     : new IdentityServiceUnavailableException("Identity service request failed", ex))
@@ -106,6 +109,10 @@ public class AuthBridgeService {
                                 return Mono.just(buildTokenResponse(did));
                             });
                 });
+    }
+
+    private static String rateLimitKey(String clientAddress, String did) {
+        return clientAddress + "|" + did;
     }
 
     private AuthResponse buildTokenResponse(String did) {
