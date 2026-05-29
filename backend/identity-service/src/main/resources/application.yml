@@ -15,3 +15,6 @@ blockchain:
   rpc-url: http://localhost:8545
   contract-address: ${DID_REGISTRY_ADDRESS:}
   account-private-key: ${BLOCKCHAIN_ACCOUNT_PRIVATE_KEY:${BLOCKCHAIN_PRIVATE_KEY:}}
+
+security:
+  key-rotation-token: ${IDENTITY_KEY_ROTATION_TOKEN:change-me-key-rotation-token}

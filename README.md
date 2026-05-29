@@ -75,6 +75,7 @@ curl -X POST http://localhost:8082/auth/refresh \
 
 # Rotate DID public key
 curl -X PUT http://localhost:8081/did/did:example:alice/key \
+  -H "X-Key-Rotation-Token: <identity-key-rotation-token>" \
   -H "Content-Type: application/json" \
   -d '{"publicKey":"0x04...new"}'
 

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -19,6 +20,7 @@ public class AuthTokenRateLimiter {
     private final long maxTrackedKeys;
     private final Clock clock;
     private final ConcurrentHashMap<String, WindowState> windows = new ConcurrentHashMap<>();
+    private final AtomicInteger trackedKeys = new AtomicInteger(0);
 
     @Autowired
     public AuthTokenRateLimiter(
@@ -45,7 +47,7 @@ public class AuthTokenRateLimiter {
         this.clock = clock;
     }
 
-    public synchronized void enforceOrThrow(String key) {
+    public void enforceOrThrow(String key) {
         if (key == null || key.isBlank()) {
             throw new IllegalArgumentException("Rate limit key must not be blank");
         }
@@ -60,6 +62,9 @@ public class AuthTokenRateLimiter {
         WindowState newState = new WindowState(now.plusSeconds(windowSeconds), new AtomicInteger(1));
         state = windows.compute(key, (_, existing) -> {
             if (existing == null || !existing.windowEnd().isAfter(now)) {
+                if (existing == null && !tryAcquireKeySlot(now)) {
+                    throw new TokenRateLimitExceededException("Too many distinct token request keys");
+                }
                 return newState;
             }
             existing.attempts().incrementAndGet();
@@ -70,11 +75,11 @@ public class AuthTokenRateLimiter {
     }
 
     private void ensureDistinctKeyCapacity(String key, Instant now) {
-        if (windows.containsKey(key) || windows.size() < maxTrackedKeys) {
+        if (windows.containsKey(key) || trackedKeys.get() < maxTrackedKeys) {
             return;
         }
-        windows.entrySet().removeIf(entry -> !entry.getValue().windowEnd().isAfter(now));
-        if (windows.size() >= maxTrackedKeys) {
+        cleanupExpired(now);
+        if (trackedKeys.get() >= maxTrackedKeys) {
             throw new TokenRateLimitExceededException("Too many distinct token request keys");
         }
     }
@@ -82,6 +87,32 @@ public class AuthTokenRateLimiter {
     private void ensureAttemptsWithinLimit(int attempts) {
         if (attempts > maxAttempts) {
             throw new TokenRateLimitExceededException("Too many token requests");
+        }
+    }
+
+    private boolean tryAcquireKeySlot(Instant now) {
+        while (true) {
+            int current = trackedKeys.get();
+            if (current < maxTrackedKeys) {
+                if (trackedKeys.compareAndSet(current, current + 1)) {
+                    return true;
+                }
+                continue;
+            }
+
+            cleanupExpired(now);
+            if (trackedKeys.get() >= maxTrackedKeys) {
+                return false;
+            }
+        }
+    }
+
+    private void cleanupExpired(Instant now) {
+        for (Map.Entry<String, WindowState> entry : windows.entrySet()) {
+            WindowState state = entry.getValue();
+            if (!state.windowEnd().isAfter(now) && windows.remove(entry.getKey(), state)) {
+                trackedKeys.decrementAndGet();
+            }
         }
     }
 }

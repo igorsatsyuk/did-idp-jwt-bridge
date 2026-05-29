@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class AuthTokenRateLimiterTest {
@@ -72,7 +73,8 @@ class AuthTokenRateLimiterTest {
         limiter.enforceOrThrow("did:example:bob");
 
         clock.set(Instant.parse("2026-01-01T00:02:00Z"));
-        limiter.enforceOrThrow("did:example:charlie");
+        assertThatCode(() -> limiter.enforceOrThrow("did:example:charlie"))
+                .doesNotThrowAnyException();
     }
 
     private static final class MutableClock extends Clock {

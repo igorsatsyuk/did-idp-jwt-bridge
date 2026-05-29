@@ -3,7 +3,9 @@ package com.didbridge.identity.controller;
 import com.didbridge.identity.dto.RegisterDidRequest;
 import com.didbridge.identity.dto.UpdateDidKeyRequest;
 import com.didbridge.identity.service.DidRegistryService;
+import com.didbridge.identity.service.KeyRotationAuthorizationException;
 import com.didbridge.model.DidDocument;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -12,10 +14,17 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/did")
 public class DidController {
 
-    private final DidRegistryService didRegistryService;
+    private static final String KEY_ROTATION_HEADER = "X-Key-Rotation-Token";
 
-    public DidController(DidRegistryService didRegistryService) {
+    private final DidRegistryService didRegistryService;
+    private final String keyRotationToken;
+
+    public DidController(
+            DidRegistryService didRegistryService,
+            @Value("${security.key-rotation-token}") String keyRotationToken
+    ) {
         this.didRegistryService = didRegistryService;
+        this.keyRotationToken = keyRotationToken;
     }
 
     @PostMapping("/register")
@@ -36,7 +45,18 @@ public class DidController {
     }
 
     @PutMapping("/{did}/key")
-    public Mono<DidDocument> updateKey(@PathVariable String did, @RequestBody UpdateDidKeyRequest request) {
+    public Mono<DidDocument> updateKey(
+            @PathVariable String did,
+            @RequestBody UpdateDidKeyRequest request,
+            @RequestHeader(name = KEY_ROTATION_HEADER, required = false) String requestToken
+    ) {
+        ensureKeyRotationAuthorized(requestToken);
         return didRegistryService.updatePublicKey(did, request.publicKey());
+    }
+
+    private void ensureKeyRotationAuthorized(String requestToken) {
+        if (!keyRotationToken.equals(requestToken)) {
+            throw new KeyRotationAuthorizationException();
+        }
     }
 }
