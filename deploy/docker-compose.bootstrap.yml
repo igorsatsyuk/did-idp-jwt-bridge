@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  blockchain:
+    image: trufflesuite/ganache:latest
+    container_name: did-blockchain
+    ports:
+      - "8545:8545"
+    # Local development only. Never use deterministic mnemonics in production.
+    command: >
+      --chain.chainId 1337
+      --wallet.mnemonic "${GANACHE_MNEMONIC:?GANACHE_MNEMONIC must be set in deploy/.env}"
+      --wallet.totalAccounts 5
+      --wallet.defaultBalance 1000
+      --miner.blockTime 0
+      --logging.verbose
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const http=require('http');const req=http.request({host:'127.0.0.1',port:8545,method:'POST',headers:{'Content-Type':'application/json'}},res=>process.exit(res.statusCode===200?0:1));req.on('error',()=>process.exit(1));req.end('{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"method\\\":\\\"eth_chainId\\\",\\\"params\\\":[],\\\"id\\\":1}');\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    networks:
+      - did-network
+
+networks:
+  did-network:
+    driver: bridge
