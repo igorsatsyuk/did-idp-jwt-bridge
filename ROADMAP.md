@@ -27,5 +27,5 @@
 - [x] Key rotation (`updatePublicKey` in DidRegistry)
 - [x] JWT refresh token mechanism
 - [x] Security hardening (rate limiting, nonce expiration)
-- [ ] Docker Compose full stack with health checks
+- [x] Docker Compose full stack with health checks
 - [ ] Kubernetes manifests

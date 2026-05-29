@@ -53,6 +53,45 @@ npm install
 npm start
 ```
 
+### Alternative: run full stack with Docker Compose
+```bash
+cp deploy/.env.example deploy/.env
+cd deploy
+# Start blockchain first (no contract address required yet)
+docker compose -f docker-compose.bootstrap.yml up -d blockchain
+```
+
+Deploy `DidRegistry` to the running local chain and copy values into `deploy/.env`:
+```bash
+cd ../blockchain
+npm install
+npm run deploy:local
+# Use Ganache funded private key from docker logs:
+# cd ../deploy && docker compose -f docker-compose.bootstrap.yml logs blockchain
+# Set DID_REGISTRY_ADDRESS and BLOCKCHAIN_ACCOUNT_PRIVATE_KEY in deploy/.env
+```
+
+Start the full stack:
+```bash
+cd ../deploy
+# Keep the bootstrap Ganache instance running and start the rest of services.
+docker compose up --build -d identity-service auth-bridge-service resource-api frontend
+```
+
+Health verification:
+```bash
+docker compose ps
+curl http://localhost:8081/actuator/health
+curl http://localhost:8082/actuator/health
+curl http://localhost:8083/actuator/health
+curl -I http://localhost:8080
+```
+
+Stop:
+```bash
+docker compose down
+```
+
 ### 5. Auth flow (curl)
 ```bash
 # Register DID
