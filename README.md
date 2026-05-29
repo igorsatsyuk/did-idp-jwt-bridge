@@ -74,7 +74,8 @@ npm run deploy:local
 Start the full stack:
 ```bash
 cd ../deploy
-docker compose up --build -d
+# Keep the bootstrap Ganache instance running and start the rest of services.
+docker compose up --build -d identity-service auth-bridge-service resource-api frontend
 ```
 
 Health verification:
@@ -89,7 +90,6 @@ curl -I http://localhost:8080
 Stop:
 ```bash
 docker compose down
-docker compose -f docker-compose.bootstrap.yml down
 ```
 
 ### 5. Auth flow (curl)
