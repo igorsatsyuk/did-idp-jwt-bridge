@@ -43,4 +43,19 @@ public class InMemoryDidRegistryService implements DidRegistryService {
                     return Mono.<Void>empty();
                 });
     }
+
+    @Override
+    public Mono<DidDocument> updatePublicKey(String did, String newPublicKey) {
+        return findByDid(did)
+                .flatMap(doc -> {
+                    if (doc.status() == DidStatus.REVOKED) {
+                        return Mono.error(new DidRevokedException(did, null));
+                    }
+                    DidDocument updated = new DidDocument(
+                            doc.did(), newPublicKey, doc.status(), doc.createdAt(), Instant.now()
+                    );
+                    store.put(did, updated);
+                    return Mono.just(updated);
+                });
+    }
 }

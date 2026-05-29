@@ -55,6 +55,32 @@ describe("DidRegistry", function () {
     ).to.be.revertedWith("Not the DID owner");
   });
 
+  it("should update DID public key for owner", async function () {
+    await registry.registerDid("did:example:key-rotation", PK.alice);
+
+    await registry.updatePublicKey("did:example:key-rotation", PK.bob);
+
+    const [publicKey] = await registry.getDid("did:example:key-rotation");
+    expect(publicKey).to.equal(PK.bob);
+  });
+
+  it("should not allow non-owner to update DID public key", async function () {
+    await registry.registerDid("did:example:key-rotation-owner", PK.alice);
+
+    await expect(
+      registry.connect(other).updatePublicKey("did:example:key-rotation-owner", PK.bob)
+    ).to.be.revertedWith("Not the DID owner");
+  });
+
+  it("should not allow key update for revoked DID", async function () {
+    await registry.registerDid("did:example:key-rotation-revoked", PK.alice);
+    await registry.revokeDid("did:example:key-rotation-revoked");
+
+    await expect(
+      registry.updatePublicKey("did:example:key-rotation-revoked", PK.bob)
+    ).to.be.revertedWith("DID is revoked");
+  });
+
   it("isActive should return true for an active DID", async function () {
     await registry.registerDid("did:example:active", PK.eve);
     expect(await registry.isActive("did:example:active")).to.equal(true);

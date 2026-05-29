@@ -356,4 +356,41 @@ class Web3jDidRegistryServiceTest {
                         && ex.getMessage().contains("no receipt"))
                 .verify();
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void updatePublicKey_updatesKeyAndReturnsDidDocument() throws Exception {
+        TransactionReceipt receipt = mock(TransactionReceipt.class);
+        when(receipt.getStatus()).thenReturn("0x1");
+        RemoteFunctionCall<TransactionReceipt> txCall = mock(RemoteFunctionCall.class);
+        when(contract.updatePublicKey(DID, "0xnew")).thenReturn(txCall);
+        when(txCall.send()).thenReturn(receipt);
+
+        Tuple5<String, BigInteger, BigInteger, BigInteger, String> tuple =
+                new Tuple5<>("0xnew", ACTIVE, TIMESTAMP, TIMESTAMP, "0xowner");
+        RemoteFunctionCall<Tuple5<String, BigInteger, BigInteger, BigInteger, String>> getCall =
+                mock(RemoteFunctionCall.class);
+        when(contract.getDid(DID)).thenReturn(getCall);
+        when(getCall.send()).thenReturn(tuple);
+
+        DidDocument result = service.updatePublicKey(DID, "0xnew").block();
+
+        assertThat(result).isNotNull();
+        assertThat(result.publicKey()).isEqualTo("0xnew");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void updatePublicKey_throwsDidRevokedException_whenContractReverts() throws Exception {
+        RemoteFunctionCall<TransactionReceipt> txCall = mock(RemoteFunctionCall.class);
+        when(contract.updatePublicKey(DID, "0xnew")).thenReturn(txCall);
+        RuntimeException cause = new RuntimeException("DID is revoked");
+        when(txCall.send()).thenThrow(cause);
+
+        StepVerifier.create(service.updatePublicKey(DID, "0xnew"))
+                .expectErrorMatches(ex -> ex instanceof DidRevokedException
+                        && ex.getMessage().contains(DID)
+                        && ex.getCause() == cause)
+                .verify();
+    }
 }

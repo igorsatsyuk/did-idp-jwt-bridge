@@ -19,6 +19,7 @@ contract DidRegistry {
 
     event DidRegistered(string indexed did, address indexed owner, uint256 timestamp);
     event DidRevoked(string indexed did, address indexed owner, uint256 timestamp);
+    event PublicKeyUpdated(string indexed did, address indexed owner, uint256 timestamp);
 
     modifier onlyOwner(string calldata did) {
         require(records[did].owner == msg.sender, "Not the DID owner");
@@ -46,6 +47,16 @@ contract DidRegistry {
         records[did].status = Status.Revoked;
         records[did].updatedAt = block.timestamp;
         emit DidRevoked(did, msg.sender, block.timestamp);
+    }
+
+    function updatePublicKey(
+        string calldata did,
+        string calldata newPublicKey
+    ) external didExists(did) onlyOwner(did) {
+        require(records[did].status == Status.Active, "DID is revoked");
+        records[did].publicKey = newPublicKey;
+        records[did].updatedAt = block.timestamp;
+        emit PublicKeyUpdated(did, msg.sender, block.timestamp);
     }
 
     function getDid(string calldata did) external view didExists(did) returns (

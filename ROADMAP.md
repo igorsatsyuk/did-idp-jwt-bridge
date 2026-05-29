@@ -24,8 +24,8 @@
 
 - [x] DID revocation — full flow (contract + API + UI)
 - [x] Architecture diagrams (C4 context, sequence)
-- [ ] Key rotation (`updatePublicKey` in DidRegistry)
-- [ ] JWT refresh token mechanism
-- [ ] Security hardening (rate limiting, nonce expiration)
+- [x] Key rotation (`updatePublicKey` in DidRegistry)
+- [x] JWT refresh token mechanism
+- [x] Security hardening (rate limiting, nonce expiration)
 - [ ] Docker Compose full stack with health checks
 - [ ] Kubernetes manifests

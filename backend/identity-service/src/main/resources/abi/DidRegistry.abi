@@ -50,6 +50,31 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "string",
+        "name": "did",
+        "type": "string"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "PublicKeyUpdated",
+    "type": "event"
+  },
+  {
     "inputs": [
       {
         "internalType": "string",
@@ -134,6 +159,24 @@
       }
     ],
     "name": "revokeDid",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "did",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "newPublicKey",
+        "type": "string"
+      }
+    ],
+    "name": "updatePublicKey",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
