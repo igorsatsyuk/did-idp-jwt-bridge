@@ -53,6 +53,28 @@ npm install
 npm start
 ```
 
+### Alternative: run full stack with Docker Compose
+```bash
+cp deploy/.env.example deploy/.env
+# Set DID_REGISTRY_ADDRESS and BLOCKCHAIN_ACCOUNT_PRIVATE_KEY in deploy/.env
+cd deploy
+docker compose up --build -d
+```
+
+Health verification:
+```bash
+docker compose ps
+curl http://localhost:8081/actuator/health
+curl http://localhost:8082/actuator/health
+curl http://localhost:8083/actuator/health
+curl -I http://localhost:8080
+```
+
+Stop:
+```bash
+docker compose down
+```
+
 ### 5. Auth flow (curl)
 ```bash
 # Register DID
