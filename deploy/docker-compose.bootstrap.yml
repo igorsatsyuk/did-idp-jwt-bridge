@@ -9,6 +9,7 @@ services:
     # Local development only. Never use deterministic mnemonics in production.
     command: >
       --chain.chainId 1337
+      --server.host 0.0.0.0
       --wallet.mnemonic "${GANACHE_MNEMONIC:?GANACHE_MNEMONIC must be set in deploy/.env}"
       --wallet.totalAccounts 5
       --wallet.defaultBalance 1000
