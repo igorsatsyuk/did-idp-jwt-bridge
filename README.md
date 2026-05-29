@@ -2,27 +2,21 @@
 
 A system that uses a private blockchain as the root of trust for decentralized identities (DID), while standard services continue using familiar JWT tokens.
 
-> **Goal:** Demonstrate Senior/Architect-level design — decentralized identity, cryptographic proofs, DID-to-JWT bridge, microservices.
-
 ## Architecture
 
-```
-Client ──► Auth Bridge (8082) ──► Identity Service (8081) ──► Blockchain :8545
-                │                                                 DidRegistry.sol
-                └──► JWT ──► Resource API (8083)
-```
+![C4 context diagram](docs/diagrams/c4-context.png)
 
 Full diagram: [docs/architecture.md](docs/architecture.md)
 
 ## Tech Stack
 
-| Layer      | Technology                                     |
-|------------|------------------------------------------------|
-| Backend    | Java 25, Spring Boot 4.0.6, Spring WebFlux     |
-| Security   | Spring Security, JJWT 0.12.6, Web3j (ECDSA)   |
-| Blockchain | Hardhat, Solidity 0.8.24, Ganache              |
-| Frontend   | Angular (Phase 3)                              |
-| Deploy     | Docker Compose                                 |
+| Layer      | Technology                           |
+|------------|--------------------------------------|
+| Backend    | Java 25, Spring Boot 4.0.6, Spring WebFlux |
+| Security   | Spring Security, JJWT 0.12.6, Web3j (ECDSA) |
+| Blockchain | Hardhat, Solidity 0.8.24, Ganache    |
+| Frontend   | Angular                              |
+| Deploy     | Docker Compose                       |
 
 ## Quick Start
 
