@@ -8,6 +8,9 @@ import com.didbridge.model.DidDocument;
 import com.didbridge.model.DidStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -75,30 +78,14 @@ class DidControllerTest {
         assertThat(result).isEqualTo(expected);
     }
 
-    @Test
-    void updateKey_throwsWhenAuthorizationTokenInvalid() {
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"wrong-token", "   "})
+    void updateKey_throwsWhenAuthorizationTokenInvalid(String requestToken) {
         DidController controller = new DidController(didRegistryService, KEY_ROTATION_TOKEN);
         UpdateDidKeyRequest request = new UpdateDidKeyRequest("0xnew-pub");
 
-        assertThatThrownBy(() -> controller.updateKey("did:example:alice", request, "wrong-token"))
-                .isInstanceOf(KeyRotationAuthorizationException.class);
-    }
-
-    @Test
-    void updateKey_throwsWhenAuthorizationTokenMissing() {
-        DidController controller = new DidController(didRegistryService, KEY_ROTATION_TOKEN);
-        UpdateDidKeyRequest request = new UpdateDidKeyRequest("0xnew-pub");
-
-        assertThatThrownBy(() -> controller.updateKey("did:example:alice", request, null))
-                .isInstanceOf(KeyRotationAuthorizationException.class);
-    }
-
-    @Test
-    void updateKey_throwsWhenAuthorizationTokenBlank() {
-        DidController controller = new DidController(didRegistryService, KEY_ROTATION_TOKEN);
-        UpdateDidKeyRequest request = new UpdateDidKeyRequest("0xnew-pub");
-
-        assertThatThrownBy(() -> controller.updateKey("did:example:alice", request, "   "))
+        assertThatThrownBy(() -> controller.updateKey("did:example:alice", request, requestToken))
                 .isInstanceOf(KeyRotationAuthorizationException.class);
     }
 }

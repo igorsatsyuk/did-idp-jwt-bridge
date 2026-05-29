@@ -56,11 +56,12 @@ class JwtServiceTest {
     @Test
     void generateToken_throws_whenCustomExpirationNotPositive() {
         JwtService service = new JwtService(SECRET, 60);
+        Map<String, Object> emptyClaims = Map.of();
 
-        assertThatThrownBy(() -> service.generateToken("did:example:alice", Map.of(), 0))
+        assertThatThrownBy(() -> service.generateToken("did:example:alice", emptyClaims, 0))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("must be positive");
-        assertThatThrownBy(() -> service.generateToken("did:example:alice", Map.of(), -1))
+        assertThatThrownBy(() -> service.generateToken("did:example:alice", emptyClaims, -1))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("must be positive");
     }
