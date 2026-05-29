@@ -28,11 +28,15 @@ public class JwtService {
     }
 
     public String generateToken(String did, Map<String, Object> extraClaims) {
+        return generateToken(did, extraClaims, expirationMinutes);
+    }
+
+    public String generateToken(String did, Map<String, Object> extraClaims, long tokenExpirationMinutes) {
         Instant now = Instant.now();
         return Jwts.builder()
                 .subject(did)
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plus(expirationMinutes, ChronoUnit.MINUTES)))
+                .expiration(Date.from(now.plus(tokenExpirationMinutes, ChronoUnit.MINUTES)))
                 .claims(extraClaims)
                 .signWith(secretKey)
                 .compact();

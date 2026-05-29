@@ -1,6 +1,7 @@
 package com.didbridge.identity.controller;
 
 import com.didbridge.identity.dto.RegisterDidRequest;
+import com.didbridge.identity.dto.UpdateDidKeyRequest;
 import com.didbridge.identity.service.DidRegistryService;
 import com.didbridge.model.DidDocument;
 import com.didbridge.model.DidStatus;
@@ -54,5 +55,19 @@ class DidControllerTest {
         Void result = controller.revoke("did:example:alice").block();
 
         assertThat(result).isNull();
+    }
+
+    @Test
+    void updateKey_delegatesToService() {
+        DidController controller = new DidController(didRegistryService);
+        UpdateDidKeyRequest request = new UpdateDidKeyRequest("0xnew-pub");
+        DidDocument expected = new DidDocument(
+                "did:example:alice", request.publicKey(), DidStatus.ACTIVE, Instant.now(), Instant.now());
+        when(didRegistryService.updatePublicKey("did:example:alice", request.publicKey()))
+                .thenReturn(Mono.just(expected));
+
+        DidDocument result = controller.updateKey("did:example:alice", request).block();
+
+        assertThat(result).isEqualTo(expected);
     }
 }

@@ -14,6 +14,7 @@ management:
 jwt:
   secret: ${JWT_SECRET:change-me-in-production-this-must-be-at-least-32-chars}
   expiration-minutes: 60
+  refresh-expiration-minutes: ${JWT_REFRESH_EXPIRATION_MINUTES:10080}
 
 services:
   identity-url: ${IDENTITY_SERVICE_URL:http://localhost:8081}
@@ -22,6 +23,9 @@ auth:
   challenge-ttl-minutes: ${AUTH_CHALLENGE_TTL_MINUTES:5}
   challenge-max-active: ${AUTH_CHALLENGE_MAX_ACTIVE:10000}
   instance-id: ${AUTH_INSTANCE_ID:${HOSTNAME:auth-bridge-service}}
+  token-rate-limit:
+    max-attempts: ${AUTH_TOKEN_RATE_LIMIT_MAX_ATTEMPTS:10}
+    window-seconds: ${AUTH_TOKEN_RATE_LIMIT_WINDOW_SECONDS:60}
 
 blockchain:
   rpc-url: http://localhost:8545

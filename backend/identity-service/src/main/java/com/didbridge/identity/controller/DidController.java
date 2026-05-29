@@ -1,6 +1,7 @@
 package com.didbridge.identity.controller;
 
 import com.didbridge.identity.dto.RegisterDidRequest;
+import com.didbridge.identity.dto.UpdateDidKeyRequest;
 import com.didbridge.identity.service.DidRegistryService;
 import com.didbridge.model.DidDocument;
 import org.springframework.http.HttpStatus;
@@ -32,5 +33,10 @@ public class DidController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> revoke(@PathVariable String did) {
         return didRegistryService.revoke(did);
+    }
+
+    @PutMapping("/{did}/key")
+    public Mono<DidDocument> updateKey(@PathVariable String did, @RequestBody UpdateDidKeyRequest request) {
+        return didRegistryService.updatePublicKey(did, request.publicKey());
     }
 }

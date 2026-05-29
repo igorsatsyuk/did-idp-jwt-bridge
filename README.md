@@ -68,6 +68,16 @@ curl -X POST http://localhost:8082/auth/token \
   -H "Content-Type: application/json" \
   -d '{"did":"did:example:alice","challenge":"<challenge-from-/auth/challenge>","signature":"0x..."}'
 
+# Refresh JWT
+curl -X POST http://localhost:8082/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{"refreshToken":"<refresh-token-from-/auth/token>"}'
+
+# Rotate DID public key
+curl -X PUT http://localhost:8081/did/did:example:alice/key \
+  -H "Content-Type: application/json" \
+  -d '{"publicKey":"0x04...new"}'
+
 # Call protected API
 curl http://localhost:8083/api/me -H "Authorization: Bearer <jwt>"
 ```

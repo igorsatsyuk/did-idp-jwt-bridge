@@ -19,6 +19,7 @@ public class Web3jDidRegistryService implements DidRegistryService {
     private static final String REVERT_DID_NOT_FOUND = "DID does not exist";
     private static final String REVERT_ALREADY_REGISTERED = "DID already registered";
     private static final String REVERT_NOT_OWNER = "Not the DID owner";
+    private static final String REVERT_DID_REVOKED = "DID is revoked";
 
     private final DidRegistry contract;
 
@@ -64,6 +65,25 @@ public class Web3jDidRegistryService implements DidRegistryService {
                 .then();
     }
 
+    @Override
+    public Mono<DidDocument> updatePublicKey(String did, String newPublicKey) {
+        return Mono.fromCallable(() -> contract.updatePublicKey(did, newPublicKey).send())
+                .subscribeOn(Schedulers.boundedElastic())
+                .switchIfEmpty(Mono.error(new IllegalStateException(
+                        "Blockchain transaction returned no receipt for DID: " + did)))
+                .map(receipt -> ensureTransactionSucceeded(did, "updatePublicKey", receipt))
+                .onErrorMap(ex -> !(ex instanceof DidNotFoundException)
+                                && containsRevert(ex, REVERT_DID_NOT_FOUND),
+                        ex -> new DidNotFoundException(did, ex))
+                .onErrorMap(ex -> !(ex instanceof DidOwnershipException)
+                                && containsRevert(ex, REVERT_NOT_OWNER),
+                        ex -> new DidOwnershipException(did, ex))
+                .onErrorMap(ex -> !(ex instanceof DidRevokedException)
+                                && containsRevert(ex, REVERT_DID_REVOKED),
+                        ex -> new DidRevokedException(did, ex))
+                .flatMap(ignored -> findByDid(did));
+    }
+
     private DidDocument toDidDocument(String did,
             Tuple5<String, BigInteger, BigInteger, BigInteger, String> t) {
         DidStatus status = BigInteger.ZERO.equals(t.component2()) ? DidStatus.ACTIVE : DidStatus.REVOKED;
@@ -106,6 +126,9 @@ public class Web3jDidRegistryService implements DidRegistryService {
         }
         if (revertReasonMatches(revertReason, REVERT_NOT_OWNER)) {
             throw new DidOwnershipException(did, txFailure);
+        }
+        if (revertReasonMatches(revertReason, REVERT_DID_REVOKED)) {
+            throw new DidRevokedException(did, txFailure);
         }
 
         throw txFailure;

@@ -36,4 +36,19 @@ class JwtServiceTest {
 
         assertThat(service.isValid("not-a-jwt")).isFalse();
     }
+
+    @Test
+    void generateToken_usesCustomExpirationAndClaims() {
+        JwtService service = new JwtService(SECRET, 60);
+        String token = service.generateToken(
+                "did:example:alice",
+                Map.of("token_type", "refresh"),
+                1440
+        );
+
+        Claims claims = service.parseToken(token);
+
+        assertThat(claims.getSubject()).isEqualTo("did:example:alice");
+        assertThat(claims.get("token_type", String.class)).isEqualTo("refresh");
+    }
 }

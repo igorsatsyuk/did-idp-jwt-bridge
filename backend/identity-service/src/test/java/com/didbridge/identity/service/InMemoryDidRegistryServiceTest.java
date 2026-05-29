@@ -76,4 +76,25 @@ class InMemoryDidRegistryServiceTest {
                 .expectErrorMatches(DidNotFoundException.class::isInstance)
                 .verify();
     }
+
+    @Test
+    void updatePublicKey_updatesActiveDidDocument() {
+        service.register(DID, PUBLIC_KEY).block();
+
+        DidDocument updated = service.updatePublicKey(DID, "0x04new").block();
+
+        assertThat(updated).isNotNull();
+        assertThat(updated.publicKey()).isEqualTo("0x04new");
+        assertThat(updated.status()).isEqualTo(DidStatus.ACTIVE);
+    }
+
+    @Test
+    void updatePublicKey_throwsDidRevokedException_forRevokedDid() {
+        service.register(DID, PUBLIC_KEY).block();
+        service.revoke(DID).block();
+
+        StepVerifier.create(service.updatePublicKey(DID, "0x04new"))
+                .expectErrorMatches(DidRevokedException.class::isInstance)
+                .verify();
+    }
 }

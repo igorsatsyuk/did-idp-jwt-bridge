@@ -5,6 +5,7 @@ import com.didbridge.authbridge.dto.AuthResponse;
 import com.didbridge.model.DidDocument;
 import com.didbridge.model.DidStatus;
 import com.didbridge.security.JwtService;
+import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +25,8 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
 class AuthBridgeServiceTest {
@@ -44,6 +47,8 @@ class AuthBridgeServiceTest {
     private SignatureVerifier signatureVerifier;
     @Mock
     private ChallengeService challengeService;
+    @Mock
+    private AuthTokenRateLimiter authTokenRateLimiter;
 
     private AuthBridgeService service;
 
@@ -59,6 +64,9 @@ class AuthBridgeServiceTest {
                 jwtService,
                 signatureVerifier,
                 challengeService,
+                authTokenRateLimiter,
+                60,
+                10080,
                 "http://identity-service:8081");
     }
 
@@ -72,11 +80,17 @@ class AuthBridgeServiceTest {
                 .thenReturn((WebClient.RequestHeadersSpec) requestHeadersSpec);
         when(responseSpec.bodyToMono(DidDocument.class)).thenReturn(Mono.just(doc));
         when(signatureVerifier.verify(request.challenge(), request.signature(), doc.publicKey())).thenReturn(true);
-        when(jwtService.generateToken(request.did(), Map.of("did", request.did()))).thenReturn("jwt-token");
+        when(jwtService.generateToken(request.did(), Map.of("did", request.did()), 60)).thenReturn("jwt-token");
+        when(jwtService.generateToken(
+                request.did(),
+                Map.of("did", request.did(), "token_type", "refresh"),
+                10080
+        )).thenReturn("refresh-token");
 
         AuthResponse response = service.authenticate(request).block();
 
-        assertThat(response).isEqualTo(new AuthResponse("jwt-token", "Bearer", 3600));
+        assertThat(response).isEqualTo(new AuthResponse("jwt-token", "Bearer", 3600, "refresh-token", 604800));
+        verify(authTokenRateLimiter).enforceOrThrow(request.did());
         verify(challengeService).ensureActiveOrThrow(request.challenge());
         verify(challengeService).consumeOrThrow(request.challenge());
     }
@@ -95,6 +109,7 @@ class AuthBridgeServiceTest {
         assertThatThrownBy(authMono::block)
                 .isInstanceOf(DidRevokedException.class)
                 .hasMessageContaining("revoked");
+        verify(authTokenRateLimiter).enforceOrThrow(request.did());
         verify(challengeService).ensureActiveOrThrow(request.challenge());
         verify(challengeService, never()).consumeOrThrow(request.challenge());
     }
@@ -114,6 +129,7 @@ class AuthBridgeServiceTest {
         assertThatThrownBy(authMono::block)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Invalid signature");
+        verify(authTokenRateLimiter).enforceOrThrow(request.did());
         verify(challengeService).ensureActiveOrThrow(request.challenge());
         verify(challengeService, never()).consumeOrThrow(request.challenge());
     }
@@ -128,6 +144,7 @@ class AuthBridgeServiceTest {
         assertThatThrownBy(authMono::block)
                 .isInstanceOf(InvalidChallengeException.class)
                 .hasMessageContaining("invalid, expired, or already used");
+        verify(authTokenRateLimiter).enforceOrThrow(request.did());
     }
 
     @Test
@@ -137,5 +154,55 @@ class AuthBridgeServiceTest {
         String challenge = service.generateChallenge().block();
 
         assertThat(challenge).isEqualTo(issued);
+    }
+
+    @Test
+    void authenticate_returnsTooManyRequests_whenRateLimitExceeded() {
+        AuthRequest request = new AuthRequest("did:example:alice", "challenge-1", "0xsignature");
+        doThrow(new TokenRateLimitExceededException("Too many token requests"))
+                .when(authTokenRateLimiter).enforceOrThrow(request.did());
+
+        assertThatThrownBy(() -> service.authenticate(request).block())
+                .isInstanceOf(TokenRateLimitExceededException.class)
+                .hasMessageContaining("Too many token requests");
+    }
+
+    @Test
+    void refreshAccessToken_returnsNewTokens_whenRefreshTokenValid() {
+        Claims claims = mock(Claims.class);
+        when(claims.getSubject()).thenReturn("did:example:alice");
+        when(claims.get("token_type", String.class)).thenReturn("refresh");
+        when(jwtService.parseToken("refresh-token")).thenReturn(claims);
+
+        DidDocument doc = new DidDocument(
+                "did:example:alice", "0xpublic", DidStatus.ACTIVE, Instant.now(), Instant.now());
+        when(requestHeadersUriSpec.uri("/did/{did}", "did:example:alice"))
+                .thenReturn((WebClient.RequestHeadersSpec) requestHeadersSpec);
+        when(responseSpec.bodyToMono(DidDocument.class)).thenReturn(Mono.just(doc));
+        when(jwtService.generateToken("did:example:alice", Map.of("did", "did:example:alice"), 60))
+                .thenReturn("new-access-token");
+        when(jwtService.generateToken(
+                "did:example:alice",
+                Map.of("did", "did:example:alice", "token_type", "refresh"),
+                10080
+        )).thenReturn("new-refresh-token");
+
+        AuthResponse response = service.refreshAccessToken("refresh-token").block();
+
+        assertThat(response).isEqualTo(
+                new AuthResponse("new-access-token", "Bearer", 3600, "new-refresh-token", 604800));
+        verify(jwtService, times(1)).parseToken("refresh-token");
+    }
+
+    @Test
+    void refreshAccessToken_throwsInvalidRefreshTokenException_whenTokenTypeInvalid() {
+        Claims claims = mock(Claims.class);
+        when(claims.getSubject()).thenReturn("did:example:alice");
+        when(claims.get("token_type", String.class)).thenReturn("access");
+        when(jwtService.parseToken("not-refresh")).thenReturn(claims);
+
+        assertThatThrownBy(() -> service.refreshAccessToken("not-refresh").block())
+                .isInstanceOf(InvalidRefreshTokenException.class)
+                .hasMessageContaining("not a refresh token");
     }
 }

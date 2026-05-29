@@ -2,6 +2,7 @@ package com.didbridge.authbridge.controller;
 
 import com.didbridge.authbridge.dto.AuthRequest;
 import com.didbridge.authbridge.dto.AuthResponse;
+import com.didbridge.authbridge.dto.RefreshTokenRequest;
 import com.didbridge.authbridge.service.AuthBridgeService;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -19,6 +20,11 @@ public class AuthController {
     @PostMapping("/token")
     public Mono<AuthResponse> token(@RequestBody AuthRequest request) {
         return authBridgeService.authenticate(request);
+    }
+
+    @PostMapping("/refresh")
+    public Mono<AuthResponse> refresh(@RequestBody RefreshTokenRequest request) {
+        return authBridgeService.refreshAccessToken(request.refreshToken());
     }
 
     @GetMapping("/challenge")
