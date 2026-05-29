@@ -233,4 +233,27 @@ class AuthBridgeServiceTest {
                 .isInstanceOf(InvalidRefreshTokenException.class)
                 .hasMessageContaining("Refresh token is invalid");
     }
+
+    @Test
+    void refreshAccessToken_throwsIdentityServiceUnavailableException_whenIdentityServiceFailsWith5xx() {
+        Claims claims = mock(Claims.class);
+        when(claims.getSubject()).thenReturn("did:example:alice");
+        when(claims.get("token_type", String.class)).thenReturn("refresh");
+        when(jwtService.parseToken("refresh-token")).thenReturn(claims);
+        when(requestHeadersUriSpec.uri("/did/{did}", "did:example:alice"))
+                .thenReturn((WebClient.RequestHeadersSpec) requestHeadersSpec);
+        when(responseSpec.bodyToMono(DidDocument.class)).thenReturn(Mono.error(
+                WebClientResponseException.create(
+                        503,
+                        "Service Unavailable",
+                        HttpHeaders.EMPTY,
+                        new byte[0],
+                        StandardCharsets.UTF_8
+                )));
+
+        Mono<AuthResponse> refreshMono = service.refreshAccessToken("refresh-token");
+        assertThatThrownBy(refreshMono::block)
+                .isInstanceOf(IdentityServiceUnavailableException.class)
+                .hasMessageContaining("Identity service request failed");
+    }
 }

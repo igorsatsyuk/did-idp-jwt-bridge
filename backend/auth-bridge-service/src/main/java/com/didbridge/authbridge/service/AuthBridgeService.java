@@ -96,8 +96,9 @@ public class AuthBridgeService {
                             .uri("/did/{did}", did)
                             .retrieve()
                             .bodyToMono(DidDocument.class)
-                            .onErrorMap(WebClientResponseException.class,
-                                    _ -> new InvalidRefreshTokenException("Refresh token is invalid"))
+                            .onErrorMap(WebClientResponseException.class, ex -> ex.getStatusCode().is4xxClientError()
+                                    ? new InvalidRefreshTokenException("Refresh token is invalid")
+                                    : new IdentityServiceUnavailableException("Identity service request failed", ex))
                             .flatMap(doc -> {
                                 if (doc.status() == DidStatus.REVOKED) {
                                     return Mono.error(new DidRevokedException(did));

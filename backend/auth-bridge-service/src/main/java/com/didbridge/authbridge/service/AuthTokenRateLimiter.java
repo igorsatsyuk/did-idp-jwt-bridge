@@ -50,24 +50,38 @@ public class AuthTokenRateLimiter {
             throw new IllegalArgumentException("Rate limit key must not be blank");
         }
         Instant now = Instant.now(clock);
-        cleanupExpired(now);
-        WindowState state = windows.compute(key, (_, existing) -> {
+        WindowState state = windows.get(key);
+        if (state != null && state.windowEnd().isAfter(now)) {
+            ensureAttemptsWithinLimit(state.attempts().incrementAndGet());
+            return;
+        }
+
+        ensureDistinctKeyCapacity(key, now);
+        WindowState newState = new WindowState(now.plusSeconds(windowSeconds), new AtomicInteger(1));
+        state = windows.compute(key, (_, existing) -> {
             if (existing == null || !existing.windowEnd().isAfter(now)) {
-                if (windows.size() >= maxTrackedKeys) {
-                    throw new TokenRateLimitExceededException("Too many distinct token request keys");
-                }
-                return new WindowState(now.plusSeconds(windowSeconds), new AtomicInteger(1));
+                return newState;
             }
             existing.attempts().incrementAndGet();
             return existing;
         });
 
-        if (state.attempts().get() > maxAttempts) {
-            throw new TokenRateLimitExceededException("Too many token requests");
+        ensureAttemptsWithinLimit(state.attempts().get());
+    }
+
+    private void ensureDistinctKeyCapacity(String key, Instant now) {
+        if (windows.containsKey(key) || windows.size() < maxTrackedKeys) {
+            return;
+        }
+        windows.entrySet().removeIf(entry -> !entry.getValue().windowEnd().isAfter(now));
+        if (windows.size() >= maxTrackedKeys) {
+            throw new TokenRateLimitExceededException("Too many distinct token request keys");
         }
     }
 
-    private void cleanupExpired(Instant now) {
-        windows.entrySet().removeIf(entry -> !entry.getValue().windowEnd().isAfter(now));
+    private void ensureAttemptsWithinLimit(int attempts) {
+        if (attempts > maxAttempts) {
+            throw new TokenRateLimitExceededException("Too many token requests");
+        }
     }
 }
