@@ -143,9 +143,8 @@ spec:
                   key: AUTH_CHALLENGE_MAX_ACTIVE
             - name: AUTH_INSTANCE_ID
               valueFrom:
-                configMapKeyRef:
-                  name: did-idp-config
-                  key: AUTH_INSTANCE_ID
+                fieldRef:
+                  fieldPath: metadata.name
             - name: AUTH_TOKEN_RATE_LIMIT_MAX_ATTEMPTS
               valueFrom:
                 configMapKeyRef:

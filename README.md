@@ -149,7 +149,7 @@ kubectl -n did-idp port-forward svc/frontend 8080:80
 # UI: http://localhost:8080
 ```
 
-### 5. Auth flow (curl)
+### Auth flow (curl)
 ```bash
 # Register DID
 curl -X POST http://localhost:8081/did/register \
