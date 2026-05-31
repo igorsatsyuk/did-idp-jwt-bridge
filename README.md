@@ -137,6 +137,7 @@ kubectl -n did-idp create secret generic did-idp-secrets \
 ```
 4. Start backend + frontend:
 ```bash
+cd ..
 kubectl apply -k deploy/kubernetes
 kubectl -n did-idp rollout status deploy/identity-service
 kubectl -n did-idp rollout status deploy/auth-bridge-service
@@ -148,35 +149,36 @@ kubectl -n did-idp rollout status deploy/frontend
 kubectl -n did-idp port-forward svc/frontend 8080:80
 # UI: http://localhost:8080
 ```
+For local curl checks after Kubernetes deploy, call APIs through frontend Nginx on `http://localhost:8080` using `/did`, `/auth`, and `/api` paths (or port-forward backend services separately).
 
 ### Auth flow (curl)
 ```bash
 # Register DID
-curl -X POST http://localhost:8081/did/register \
+curl -X POST http://localhost:8080/did/register \
   -H "Content-Type: application/json" \
   -d '{"did":"did:example:alice","publicKey":"0x04..."}'
 
 # Get challenge
-curl http://localhost:8082/auth/challenge
+curl http://localhost:8080/auth/challenge
 
 # Get JWT
-curl -X POST http://localhost:8082/auth/token \
+curl -X POST http://localhost:8080/auth/token \
   -H "Content-Type: application/json" \
   -d '{"did":"did:example:alice","challenge":"<challenge-from-/auth/challenge>","signature":"0x..."}'
 
 # Refresh JWT
-curl -X POST http://localhost:8082/auth/refresh \
+curl -X POST http://localhost:8080/auth/refresh \
   -H "Content-Type: application/json" \
   -d '{"refreshToken":"<refresh-token-from-/auth/token>"}'
 
 # Rotate DID public key
-curl -X PUT http://localhost:8081/did/did:example:alice/key \
+curl -X PUT http://localhost:8080/did/did:example:alice/key \
   -H "X-Key-Rotation-Token: <identity-key-rotation-token>" \
   -H "Content-Type: application/json" \
   -d '{"publicKey":"0x04...new"}'
 
 # Call protected API
-curl http://localhost:8083/api/me -H "Authorization: Bearer <jwt>"
+curl http://localhost:8080/api/me -H "Authorization: Bearer <jwt>"
 ```
 
 > `auth-bridge-service` keeps active challenges in-memory. In multi-instance deployments, configure sticky routing for `/auth/challenge` and `/auth/token` to the same instance (or use a shared challenge store).
