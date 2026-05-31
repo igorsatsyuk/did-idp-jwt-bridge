@@ -100,6 +100,8 @@ docker build -t did-auth-bridge-service:local -f backend/auth-bridge-service/Doc
 docker build -t did-resource-api:local -f backend/resource-api/Dockerfile backend
 docker build -t did-frontend:local -f frontend/did-ui/Dockerfile frontend/did-ui
 ```
+> If your cluster nodes cannot see local Docker images (for example, kind or remote Docker daemon), load/push these images into the cluster runtime/registry before applying manifests.
+
 2. Prepare secrets and base resources:
 ```bash
 cp deploy/kubernetes/secret.template.yaml deploy/kubernetes/secret.yaml

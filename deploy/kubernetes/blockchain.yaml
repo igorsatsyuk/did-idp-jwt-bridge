@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: ganache
-          image: trufflesuite/ganache:latest
+          image: trufflesuite/ganache:v7.9.1
           imagePullPolicy: IfNotPresent
           args:
             - --chain.chainId
@@ -67,4 +67,3 @@ spec:
     - name: rpc
       port: 8545
       targetPort: 8545
-

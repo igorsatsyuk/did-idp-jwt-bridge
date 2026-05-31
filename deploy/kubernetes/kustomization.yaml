@@ -4,7 +4,5 @@ namespace: did-idp
 resources:
   - namespace.yaml
   - configmap.yaml
-  - secret.template.yaml
   - blockchain.yaml
   - services.yaml
-
