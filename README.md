@@ -137,7 +137,7 @@ kubectl -n did-idp create secret generic did-idp-secrets \
 ```
 4. Start backend + frontend:
 ```bash
-cd ..
+# Run this step from repository root (same terminal as steps 1-2).
 kubectl apply -k deploy/kubernetes
 kubectl -n did-idp rollout status deploy/identity-service
 kubectl -n did-idp rollout status deploy/auth-bridge-service
