@@ -153,6 +153,9 @@ For local curl checks after Kubernetes deploy, call APIs through frontend Nginx 
 If you run services directly from Quick Start steps 1-4 (without frontend proxy), use direct backend URLs: `http://localhost:8081` (`/did`), `http://localhost:8082` (`/auth`), and `http://localhost:8083` (`/api`).
 
 ### Auth flow (curl)
+The commands below assume the frontend Nginx proxy is available at `http://localhost:8080` (Docker Compose or Kubernetes port-forward flow).
+If you are running backend services directly (Quick Start steps 1-4, no proxy), use `http://localhost:8081` for `/did`, `http://localhost:8082` for `/auth`, and `http://localhost:8083` for `/api`.
+
 ```bash
 # Register DID
 curl -X POST http://localhost:8080/did/register \
