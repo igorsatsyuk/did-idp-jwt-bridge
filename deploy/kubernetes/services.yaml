@@ -15,6 +15,11 @@ spec:
       labels:
         app: identity-service
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
       containers:
         - name: identity-service
           image: did-identity-service:local
@@ -88,6 +93,11 @@ spec:
       labels:
         app: auth-bridge-service
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
       containers:
         - name: auth-bridge-service
           image: did-auth-bridge-service:local
@@ -196,6 +206,11 @@ spec:
       labels:
         app: resource-api
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
       containers:
         - name: resource-api
           image: did-resource-api:local
@@ -288,4 +303,3 @@ spec:
     - name: http
       port: 80
       targetPort: 80
-

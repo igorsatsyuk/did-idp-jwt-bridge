@@ -104,11 +104,19 @@ docker build -t did-frontend:local -f frontend/did-ui/Dockerfile frontend/did-ui
 
 2. Prepare secrets and base resources:
 ```bash
-cp deploy/kubernetes/secret.template.yaml deploy/kubernetes/secret.yaml
-# Edit deploy/kubernetes/secret.yaml and fill JWT_SECRET, IDENTITY_KEY_ROTATION_TOKEN, etc.
+export JWT_SECRET='replace-with-32-plus-char-secret'
+export IDENTITY_KEY_ROTATION_TOKEN='replace-with-key-rotation-token'
+export BLOCKCHAIN_ACCOUNT_PRIVATE_KEY='0xreplace-with-funded-private-key'
+export GANACHE_MNEMONIC='replace-with-local-dev-ganache-mnemonic'
 kubectl apply -f deploy/kubernetes/namespace.yaml
+kubectl -n did-idp create secret generic did-idp-secrets \
+  --from-literal=JWT_SECRET="$JWT_SECRET" \
+  --from-literal=IDENTITY_KEY_ROTATION_TOKEN="$IDENTITY_KEY_ROTATION_TOKEN" \
+  --from-literal=DID_REGISTRY_ADDRESS='0x0000000000000000000000000000000000000000' \
+  --from-literal=BLOCKCHAIN_ACCOUNT_PRIVATE_KEY="$BLOCKCHAIN_ACCOUNT_PRIVATE_KEY" \
+  --from-literal=GANACHE_MNEMONIC="$GANACHE_MNEMONIC" \
+  --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f deploy/kubernetes/configmap.yaml
-kubectl apply -f deploy/kubernetes/secret.yaml
 kubectl apply -f deploy/kubernetes/blockchain.yaml
 ```
 3. Deploy `DidRegistry` into the in-cluster blockchain and update `DID_REGISTRY_ADDRESS`:
@@ -118,12 +126,18 @@ kubectl -n did-idp port-forward svc/blockchain 8545:8545
 cd blockchain
 npm install
 npm run deploy:local
-# Put DID_REGISTRY_ADDRESS and funded BLOCKCHAIN_ACCOUNT_PRIVATE_KEY into deploy/kubernetes/secret.yaml
-kubectl apply -f ../deploy/kubernetes/secret.yaml
+# Then re-apply secret with real DID_REGISTRY_ADDRESS:
+kubectl -n did-idp create secret generic did-idp-secrets \
+  --from-literal=JWT_SECRET="$JWT_SECRET" \
+  --from-literal=IDENTITY_KEY_ROTATION_TOKEN="$IDENTITY_KEY_ROTATION_TOKEN" \
+  --from-literal=DID_REGISTRY_ADDRESS='<address-from-deploy:local>' \
+  --from-literal=BLOCKCHAIN_ACCOUNT_PRIVATE_KEY="$BLOCKCHAIN_ACCOUNT_PRIVATE_KEY" \
+  --from-literal=GANACHE_MNEMONIC="$GANACHE_MNEMONIC" \
+  --dry-run=client -o yaml | kubectl apply -f -
 ```
 4. Start backend + frontend:
 ```bash
-kubectl apply -f deploy/kubernetes/services.yaml
+kubectl apply -k deploy/kubernetes
 kubectl -n did-idp rollout status deploy/identity-service
 kubectl -n did-idp rollout status deploy/auth-bridge-service
 kubectl -n did-idp rollout status deploy/resource-api
