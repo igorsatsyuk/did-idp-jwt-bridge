@@ -150,6 +150,7 @@ kubectl -n did-idp port-forward svc/frontend 8080:80
 # UI: http://localhost:8080
 ```
 For local curl checks after Kubernetes deploy, call APIs through frontend Nginx on `http://localhost:8080` using `/did`, `/auth`, and `/api` paths (or port-forward backend services separately).
+If you run services directly from Quick Start steps 1-4 (without frontend proxy), use direct backend URLs: `http://localhost:8081` (`/did`), `http://localhost:8082` (`/auth`), and `http://localhost:8083` (`/api`).
 
 ### Auth flow (curl)
 ```bash
