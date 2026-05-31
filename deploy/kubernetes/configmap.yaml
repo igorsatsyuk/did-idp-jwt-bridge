@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: did-idp-config
+  namespace: did-idp
+data:
+  BLOCKCHAIN_RPC_URL: http://blockchain:8545
+  IDENTITY_SERVICE_URL: http://identity-service:8081
+  JWT_REFRESH_EXPIRATION_MINUTES: "10080"
+  AUTH_CHALLENGE_TTL_MINUTES: "5"
+  AUTH_CHALLENGE_MAX_ACTIVE: "10000"
+  AUTH_TOKEN_RATE_LIMIT_MAX_ATTEMPTS: "10"
+  AUTH_TOKEN_RATE_LIMIT_WINDOW_SECONDS: "60"
+  AUTH_TOKEN_RATE_LIMIT_MAX_TRACKED_KEYS: "10000"
+  AUTH_INSTANCE_ID: auth-bridge-service
+

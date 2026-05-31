@@ -92,6 +92,47 @@ Stop:
 docker compose down
 ```
 
+### Alternative: run full stack with Kubernetes (local/dev cluster)
+1. Build local images (or replace image names in manifests with your registry images):
+```bash
+docker build -t did-identity-service:local -f backend/identity-service/Dockerfile backend
+docker build -t did-auth-bridge-service:local -f backend/auth-bridge-service/Dockerfile backend
+docker build -t did-resource-api:local -f backend/resource-api/Dockerfile backend
+docker build -t did-frontend:local -f frontend/did-ui/Dockerfile frontend/did-ui
+```
+2. Prepare secrets and base resources:
+```bash
+cp deploy/kubernetes/secret.template.yaml deploy/kubernetes/secret.yaml
+# Edit deploy/kubernetes/secret.yaml and fill JWT_SECRET, IDENTITY_KEY_ROTATION_TOKEN, etc.
+kubectl apply -f deploy/kubernetes/namespace.yaml
+kubectl apply -f deploy/kubernetes/configmap.yaml
+kubectl apply -f deploy/kubernetes/secret.yaml
+kubectl apply -f deploy/kubernetes/blockchain.yaml
+```
+3. Deploy `DidRegistry` into the in-cluster blockchain and update `DID_REGISTRY_ADDRESS`:
+```bash
+kubectl -n did-idp port-forward svc/blockchain 8545:8545
+# In another terminal:
+cd blockchain
+npm install
+npm run deploy:local
+# Put DID_REGISTRY_ADDRESS and funded BLOCKCHAIN_ACCOUNT_PRIVATE_KEY into deploy/kubernetes/secret.yaml
+kubectl apply -f ../deploy/kubernetes/secret.yaml
+```
+4. Start backend + frontend:
+```bash
+kubectl apply -f deploy/kubernetes/services.yaml
+kubectl -n did-idp rollout status deploy/identity-service
+kubectl -n did-idp rollout status deploy/auth-bridge-service
+kubectl -n did-idp rollout status deploy/resource-api
+kubectl -n did-idp rollout status deploy/frontend
+```
+5. Access UI/API:
+```bash
+kubectl -n did-idp port-forward svc/frontend 8080:80
+# UI: http://localhost:8080
+```
+
 ### 5. Auth flow (curl)
 ```bash
 # Register DID

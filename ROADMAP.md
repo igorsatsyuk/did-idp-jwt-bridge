@@ -28,4 +28,4 @@
 - [x] JWT refresh token mechanism
 - [x] Security hardening (rate limiting, nonce expiration)
 - [x] Docker Compose full stack with health checks
-- [ ] Kubernetes manifests
+- [x] Kubernetes manifests
