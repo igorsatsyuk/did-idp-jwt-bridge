@@ -92,34 +92,97 @@ Stop:
 docker compose down
 ```
 
-### 5. Auth flow (curl)
+### Alternative: run full stack with Kubernetes (local/dev cluster)
+1. Build local images (or replace image names in manifests with your registry images):
+```bash
+docker build -t did-identity-service:local -f backend/identity-service/Dockerfile backend
+docker build -t did-auth-bridge-service:local -f backend/auth-bridge-service/Dockerfile backend
+docker build -t did-resource-api:local -f backend/resource-api/Dockerfile backend
+docker build -t did-frontend:local -f frontend/did-ui/Dockerfile frontend/did-ui
+```
+> If your cluster nodes cannot see local Docker images (for example, kind or remote Docker daemon), load/push these images into the cluster runtime/registry before applying manifests.
+
+2. Prepare secrets and base resources:
+```bash
+export JWT_SECRET='replace-with-32-plus-char-secret'
+export IDENTITY_KEY_ROTATION_TOKEN='replace-with-key-rotation-token'
+export BLOCKCHAIN_ACCOUNT_PRIVATE_KEY='0xreplace-with-funded-private-key'
+export GANACHE_MNEMONIC='replace-with-local-dev-ganache-mnemonic'
+kubectl apply -f deploy/kubernetes/namespace.yaml
+kubectl -n did-idp create secret generic did-idp-secrets \
+  --from-literal=JWT_SECRET="$JWT_SECRET" \
+  --from-literal=IDENTITY_KEY_ROTATION_TOKEN="$IDENTITY_KEY_ROTATION_TOKEN" \
+  --from-literal=DID_REGISTRY_ADDRESS='0x0000000000000000000000000000000000000000' \
+  --from-literal=BLOCKCHAIN_ACCOUNT_PRIVATE_KEY="$BLOCKCHAIN_ACCOUNT_PRIVATE_KEY" \
+  --from-literal=GANACHE_MNEMONIC="$GANACHE_MNEMONIC" \
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f deploy/kubernetes/configmap.yaml
+kubectl apply -f deploy/kubernetes/blockchain.yaml
+```
+3. Deploy `DidRegistry` into the in-cluster blockchain and update `DID_REGISTRY_ADDRESS`:
+```bash
+kubectl -n did-idp port-forward svc/blockchain 8545:8545
+# In another terminal:
+cd blockchain
+npm install
+npm run deploy:local
+# Then re-apply secret with real DID_REGISTRY_ADDRESS:
+kubectl -n did-idp create secret generic did-idp-secrets \
+  --from-literal=JWT_SECRET="$JWT_SECRET" \
+  --from-literal=IDENTITY_KEY_ROTATION_TOKEN="$IDENTITY_KEY_ROTATION_TOKEN" \
+  --from-literal=DID_REGISTRY_ADDRESS='<address-from-deploy:local>' \
+  --from-literal=BLOCKCHAIN_ACCOUNT_PRIVATE_KEY="$BLOCKCHAIN_ACCOUNT_PRIVATE_KEY" \
+  --from-literal=GANACHE_MNEMONIC="$GANACHE_MNEMONIC" \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+4. Start backend + frontend:
+```bash
+# Run this step from repository root (same terminal as steps 1-2).
+kubectl apply -k deploy/kubernetes
+kubectl -n did-idp rollout status deploy/identity-service
+kubectl -n did-idp rollout status deploy/auth-bridge-service
+kubectl -n did-idp rollout status deploy/resource-api
+kubectl -n did-idp rollout status deploy/frontend
+```
+5. Access UI/API:
+```bash
+kubectl -n did-idp port-forward svc/frontend 8080:80
+# UI: http://localhost:8080
+```
+For local curl checks after Kubernetes deploy, call APIs through frontend Nginx on `http://localhost:8080` using `/did`, `/auth`, and `/api` paths (or port-forward backend services separately).
+If you run services directly from Quick Start steps 1-4 (without frontend proxy), use direct backend URLs: `http://localhost:8081` (`/did`), `http://localhost:8082` (`/auth`), and `http://localhost:8083` (`/api`).
+
+### Auth flow (curl)
+The commands below assume the frontend Nginx proxy is available at `http://localhost:8080` (Docker Compose or Kubernetes port-forward flow).
+If you are running backend services directly (Quick Start steps 1-4, no proxy), use `http://localhost:8081` for `/did`, `http://localhost:8082` for `/auth`, and `http://localhost:8083` for `/api`.
+
 ```bash
 # Register DID
-curl -X POST http://localhost:8081/did/register \
+curl -X POST http://localhost:8080/did/register \
   -H "Content-Type: application/json" \
   -d '{"did":"did:example:alice","publicKey":"0x04..."}'
 
 # Get challenge
-curl http://localhost:8082/auth/challenge
+curl http://localhost:8080/auth/challenge
 
 # Get JWT
-curl -X POST http://localhost:8082/auth/token \
+curl -X POST http://localhost:8080/auth/token \
   -H "Content-Type: application/json" \
   -d '{"did":"did:example:alice","challenge":"<challenge-from-/auth/challenge>","signature":"0x..."}'
 
 # Refresh JWT
-curl -X POST http://localhost:8082/auth/refresh \
+curl -X POST http://localhost:8080/auth/refresh \
   -H "Content-Type: application/json" \
   -d '{"refreshToken":"<refresh-token-from-/auth/token>"}'
 
 # Rotate DID public key
-curl -X PUT http://localhost:8081/did/did:example:alice/key \
+curl -X PUT http://localhost:8080/did/did:example:alice/key \
   -H "X-Key-Rotation-Token: <identity-key-rotation-token>" \
   -H "Content-Type: application/json" \
   -d '{"publicKey":"0x04...new"}'
 
 # Call protected API
-curl http://localhost:8083/api/me -H "Authorization: Bearer <jwt>"
+curl http://localhost:8080/api/me -H "Authorization: Bearer <jwt>"
 ```
 
 > `auth-bridge-service` keeps active challenges in-memory. In multi-instance deployments, configure sticky routing for `/auth/challenge` and `/auth/token` to the same instance (or use a shared challenge store).

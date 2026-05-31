@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: did-idp
+  labels:
+    app.kubernetes.io/part-of: did-idp-jwt-bridge
+
