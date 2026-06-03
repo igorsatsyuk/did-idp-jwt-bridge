@@ -211,6 +211,7 @@ jobs:
             sonar:sonar
             "-Dsonar.host.url=${host_url}"
             "-Dsonar.projectKey=${REPO_NAME}-backend"
+            "-Dsonar.projectName=${REPO_NAME}-backend"
             "-Dsonar.token=${SONAR_TOKEN}"
           )
 
