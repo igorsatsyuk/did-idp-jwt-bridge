@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.didbridge</groupId>
+        <groupId>lt.satsyuk.didbridge</groupId>
         <artifactId>backend</artifactId>
         <version>0.1.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
@@ -28,7 +28,7 @@
             <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.didbridge</groupId>
+            <groupId>lt.satsyuk.didbridge</groupId>
             <artifactId>security</artifactId>
         </dependency>
         <dependency>
@@ -47,3 +47,4 @@
         </plugins>
     </build>
 </project>
+
