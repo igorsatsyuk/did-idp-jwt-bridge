@@ -11,15 +11,16 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class AuthTokenRateLimiterTest {
+    private static final Clock FIXED_CLOCK =
+            Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC);
 
     @Test
     void enforceOrThrow_throwsWhenLimitExceededWithinWindow() {
-        Instant now = Instant.parse("2026-01-01T00:00:00Z");
         AuthTokenRateLimiter limiter = new AuthTokenRateLimiter(
                 2,
                 60,
                 100,
-                Clock.fixed(now, ZoneOffset.UTC)
+                FIXED_CLOCK
         );
 
         limiter.enforceOrThrow("did:example:alice");
@@ -32,20 +33,18 @@ class AuthTokenRateLimiterTest {
 
     @Test
     void constructor_throwsWhenWindowSecondsInvalid() {
-        Clock clock = Clock.systemUTC();
-        assertThatThrownBy(() -> new AuthTokenRateLimiter(1, 0, 10, clock))
+        assertThatThrownBy(() -> new AuthTokenRateLimiter(1, 0, 10, FIXED_CLOCK))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("window-seconds");
     }
 
     @Test
     void enforceOrThrow_throwsWhenTrackedKeysLimitExceeded() {
-        Instant now = Instant.parse("2026-01-01T00:00:00Z");
         AuthTokenRateLimiter limiter = new AuthTokenRateLimiter(
                 2,
                 60,
                 2,
-                Clock.fixed(now, ZoneOffset.UTC)
+                FIXED_CLOCK
         );
 
         limiter.enforceOrThrow("did:example:alice");
@@ -58,8 +57,7 @@ class AuthTokenRateLimiterTest {
 
     @Test
     void constructor_throwsWhenMaxTrackedKeysInvalid() {
-        Clock clock = Clock.systemUTC();
-        assertThatThrownBy(() -> new AuthTokenRateLimiter(1, 60, 0, clock))
+        assertThatThrownBy(() -> new AuthTokenRateLimiter(1, 60, 0, FIXED_CLOCK))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("max-tracked-keys");
     }

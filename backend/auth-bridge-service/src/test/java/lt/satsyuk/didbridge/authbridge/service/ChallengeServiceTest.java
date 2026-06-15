@@ -18,10 +18,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ChallengeServiceTest {
+    private static final Clock FIXED_CLOCK =
+            Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC);
 
     @Test
     void consumeOrThrow_acceptsFreshChallengeExactlyOnce() {
-        ChallengeService service = new ChallengeService(5, Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC));
+        ChallengeService service = new ChallengeService(5, FIXED_CLOCK);
         String challenge = service.issueChallenge();
         service.ensureActiveOrThrow(challenge);
 
@@ -49,7 +51,7 @@ class ChallengeServiceTest {
 
     @Test
     void consumeOrThrow_rejectsBlankChallenge() {
-        ChallengeService service = new ChallengeService(5, Clock.systemUTC());
+        ChallengeService service = new ChallengeService(5, FIXED_CLOCK);
 
         assertThatThrownBy(() -> service.consumeOrThrow(" "))
                 .isInstanceOf(InvalidChallengeException.class)
@@ -58,7 +60,7 @@ class ChallengeServiceTest {
 
     @Test
     void issueChallenge_returnsUuidString() {
-        ChallengeService service = new ChallengeService(5, Clock.systemUTC());
+        ChallengeService service = new ChallengeService(5, FIXED_CLOCK);
 
         String challenge = service.issueChallenge();
 
@@ -67,8 +69,7 @@ class ChallengeServiceTest {
 
     @Test
     void issueChallenge_rejectsWhenCapacityExceeded() {
-        Clock fixed = Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC);
-        ChallengeService service = new ChallengeService(5, 1, fixed);
+        ChallengeService service = new ChallengeService(5, 1, FIXED_CLOCK);
         service.issueChallenge();
 
         assertThatThrownBy(service::issueChallenge)
@@ -78,24 +79,21 @@ class ChallengeServiceTest {
 
     @Test
     void constructor_rejectsInvalidMaxActiveConfig() {
-        Clock clock = Clock.systemUTC();
-        assertThatThrownBy(() -> new ChallengeService(5, 0, clock))
+        assertThatThrownBy(() -> new ChallengeService(5, 0, FIXED_CLOCK))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("challenge-max-active");
     }
 
     @Test
     void constructor_rejectsNonPositiveTtlConfig() {
-        Clock clock = Clock.systemUTC();
-        assertThatThrownBy(() -> new ChallengeService(0, clock))
+        assertThatThrownBy(() -> new ChallengeService(0, FIXED_CLOCK))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("challenge-ttl-minutes");
     }
 
     @Test
     void issueChallenge_enforcesCapacityUnderConcurrentCalls() throws Exception {
-        Clock fixed = Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC);
-        ChallengeService service = new ChallengeService(5, 1, fixed);
+        ChallengeService service = new ChallengeService(5, 1, FIXED_CLOCK);
         ExecutorService executor = Executors.newFixedThreadPool(2);
         CountDownLatch start = new CountDownLatch(1);
         try {
@@ -125,9 +123,8 @@ class ChallengeServiceTest {
 
     @Test
     void ensureActiveOrThrow_rejectsChallengeIssuedByDifferentInstance() {
-        Clock fixed = Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC);
-        ChallengeService issuer = new ChallengeService(5, 10, "instance-a", fixed);
-        ChallengeService validator = new ChallengeService(5, 10, "instance-b", fixed);
+        ChallengeService issuer = new ChallengeService(5, 10, "instance-a", FIXED_CLOCK);
+        ChallengeService validator = new ChallengeService(5, 10, "instance-b", FIXED_CLOCK);
         String challenge = issuer.issueChallenge();
 
         assertThatThrownBy(() -> validator.ensureActiveOrThrow(challenge))
@@ -137,16 +134,14 @@ class ChallengeServiceTest {
 
     @Test
     void constructor_rejectsBlankInstanceId() {
-        Clock clock = Clock.systemUTC();
-        assertThatThrownBy(() -> new ChallengeService(5, 10, " ", clock))
+        assertThatThrownBy(() -> new ChallengeService(5, 10, " ", FIXED_CLOCK))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("auth.instance-id");
     }
 
     @Test
     void constructor_rejectsInstanceIdContainingSeparator() {
-        Clock clock = Clock.systemUTC();
-        assertThatThrownBy(() -> new ChallengeService(5, 10, "node:a", clock))
+        assertThatThrownBy(() -> new ChallengeService(5, 10, "node:a", FIXED_CLOCK))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("must not contain ':'");
     }

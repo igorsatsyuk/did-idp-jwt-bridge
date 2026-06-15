@@ -6,17 +6,19 @@
     <p class="subtitle">Fetch challenge, sign with your wallet private key, exchange for JWT, and inspect claims.</p>
 
     <form class="auth-form" [formGroup]="authForm">
+      <label class="visually-hidden" for="auth-did">DID</label>
       <mat-form-field appearance="outline">
         <mat-label>DID</mat-label>
-        <input matInput formControlName="did" placeholder="did:ethr:0x..." />
+        <input id="auth-did" matInput formControlName="did" placeholder="did:ethr:0x..." />
         <mat-error *ngIf="authForm.controls.did.touched && authForm.controls.did.hasError('required')">
           DID is required.
         </mat-error>
       </mat-form-field>
 
+      <label class="visually-hidden" for="auth-private-key">Private key</label>
       <mat-form-field appearance="outline">
         <mat-label>Private key</mat-label>
-        <textarea matInput rows="3" formControlName="privateKey" placeholder="0x..."></textarea>
+        <textarea id="auth-private-key" matInput rows="3" formControlName="privateKey" placeholder="0x..."></textarea>
         <mat-error *ngIf="authForm.controls.privateKey.touched && authForm.controls.privateKey.hasError('required')">
           Private key is required.
         </mat-error>

@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -36,11 +36,12 @@ public class JwtService {
             throw new IllegalArgumentException("tokenExpirationMinutes must be positive");
         }
         Instant now = Instant.now();
+        Map<String, Object> claims = new HashMap<>(extraClaims);
+        claims.put("iat", now.getEpochSecond());
+        claims.put("exp", now.plus(tokenExpirationMinutes, ChronoUnit.MINUTES).getEpochSecond());
         return Jwts.builder()
+                .claims(claims)
                 .subject(did)
-                .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plus(tokenExpirationMinutes, ChronoUnit.MINUTES)))
-                .claims(extraClaims)
                 .signWith(secretKey)
                 .compact();
     }
