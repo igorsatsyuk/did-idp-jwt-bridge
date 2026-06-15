@@ -36,6 +36,8 @@ class AuthRevocationFlowIntegrationTest {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final ConcurrentHashMap<String, DidDocumentPayload> DID_STORE = new ConcurrentHashMap<>();
+    private static final Instant CREATED_AT = Instant.parse("2026-01-01T00:00:00Z");
+    private static final Instant REVOKED_AT = Instant.parse("2026-01-01T00:05:00Z");
 
     private static HttpServer identityStubServer;
 
@@ -117,8 +119,13 @@ class AuthRevocationFlowIntegrationTest {
             return;
         }
 
-        Instant now = Instant.now();
-        DidDocumentPayload doc = new DidDocumentPayload(payload.did, payload.publicKey, "ACTIVE", now.toString(), now.toString());
+        DidDocumentPayload doc = new DidDocumentPayload(
+                payload.did,
+                payload.publicKey,
+                "ACTIVE",
+                CREATED_AT.toString(),
+                CREATED_AT.toString()
+        );
         DID_STORE.put(payload.did, doc);
 
         writeJson(exchange, 201, doc);
@@ -178,7 +185,7 @@ class AuthRevocationFlowIntegrationTest {
                 existing.publicKey,
                 "REVOKED",
                 existing.createdAt,
-                Instant.now().toString()
+                REVOKED_AT.toString()
         );
         DID_STORE.put(did, revoked);
         writeResponse(exchange, 204, "");

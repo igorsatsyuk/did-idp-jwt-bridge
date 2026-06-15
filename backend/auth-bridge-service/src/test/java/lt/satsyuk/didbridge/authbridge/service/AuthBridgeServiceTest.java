@@ -38,6 +38,7 @@ import static org.mockito.Mockito.mock;
 @ExtendWith(MockitoExtension.class)
 class AuthBridgeServiceTest {
     private static final String CLIENT_ADDRESS = "127.0.0.1";
+    private static final Instant FIXED_INSTANT = Instant.parse("2026-01-01T00:00:00Z");
 
 
     @Mock
@@ -83,7 +84,7 @@ class AuthBridgeServiceTest {
     void authenticate_returnsToken_whenDidActiveAndSignatureValid() {
         AuthRequest request = new AuthRequest("did:example:alice", "challenge-1", "0xsignature");
         DidDocument doc = new DidDocument(
-                request.did(), "0xpublic", DidStatus.ACTIVE, Instant.now(), Instant.now());
+                request.did(), "0xpublic", DidStatus.ACTIVE, FIXED_INSTANT, FIXED_INSTANT);
 
         when(requestHeadersUriSpec.uri("/did/{did}", request.did()))
                 .thenReturn((WebClient.RequestHeadersSpec) requestHeadersSpec);
@@ -108,7 +109,7 @@ class AuthBridgeServiceTest {
     void authenticate_returnsUnauthorized_whenDidRevoked() {
         AuthRequest request = new AuthRequest("did:example:alice", "challenge-1", "0xsignature");
         DidDocument doc = new DidDocument(
-                request.did(), "0xpublic", DidStatus.REVOKED, Instant.now(), Instant.now());
+                request.did(), "0xpublic", DidStatus.REVOKED, FIXED_INSTANT, FIXED_INSTANT);
 
         when(requestHeadersUriSpec.uri("/did/{did}", request.did()))
                 .thenReturn((WebClient.RequestHeadersSpec) requestHeadersSpec);
@@ -127,7 +128,7 @@ class AuthBridgeServiceTest {
     void authenticate_returnsError_whenSignatureInvalid() {
         AuthRequest request = new AuthRequest("did:example:alice", "challenge-1", "0xsignature");
         DidDocument doc = new DidDocument(
-                request.did(), "0xpublic", DidStatus.ACTIVE, Instant.now(), Instant.now());
+                request.did(), "0xpublic", DidStatus.ACTIVE, FIXED_INSTANT, FIXED_INSTANT);
 
         when(requestHeadersUriSpec.uri("/did/{did}", request.did()))
                 .thenReturn((WebClient.RequestHeadersSpec) requestHeadersSpec);
@@ -185,7 +186,7 @@ class AuthBridgeServiceTest {
         when(jwtService.parseToken("refresh-token")).thenReturn(claims);
 
         DidDocument doc = new DidDocument(
-                "did:example:alice", "0xpublic", DidStatus.ACTIVE, Instant.now(), Instant.now());
+                "did:example:alice", "0xpublic", DidStatus.ACTIVE, FIXED_INSTANT, FIXED_INSTANT);
         when(requestHeadersUriSpec.uri("/did/{did}", "did:example:alice"))
                 .thenReturn((WebClient.RequestHeadersSpec) requestHeadersSpec);
         when(responseSpec.bodyToMono(DidDocument.class)).thenReturn(Mono.just(doc));

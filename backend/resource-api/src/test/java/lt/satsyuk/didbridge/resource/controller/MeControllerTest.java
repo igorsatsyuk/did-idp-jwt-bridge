@@ -9,6 +9,8 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class MeControllerTest {
+    private static final Instant ISSUED_AT = Instant.parse("2026-01-01T00:00:00Z");
+    private static final Instant EXPIRES_AT = ISSUED_AT.plusSeconds(300);
 
     @Test
     @SuppressWarnings("unchecked")
@@ -18,8 +20,8 @@ class MeControllerTest {
                 .header("alg", "none")
                 .subject("did:example:alice")
                 .claim("role", "user")
-                .issuedAt(Instant.now())
-                .expiresAt(Instant.now().plusSeconds(300))
+                .issuedAt(ISSUED_AT)
+                .expiresAt(EXPIRES_AT)
                 .build();
 
         Map<String, Object> result = controller.me(jwt).block();
