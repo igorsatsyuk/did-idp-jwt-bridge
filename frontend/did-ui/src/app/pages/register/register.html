@@ -12,7 +12,7 @@
     <form class="register-form" [formGroup]="registerForm" (ngSubmit)="submitRegistration()">
       <mat-form-field appearance="outline">
         <mat-label>DID</mat-label>
-        <input matInput formControlName="did" placeholder="did:ethr:0x..." readonly />
+        <input id="register-did" matInput formControlName="did" placeholder="did:ethr:0x..." readonly />
         <mat-error *ngIf="registerForm.controls.did.touched && registerForm.controls.did.hasError('required')">
           DID is required.
         </mat-error>
@@ -20,7 +20,7 @@
 
       <mat-form-field appearance="outline">
         <mat-label>Public key</mat-label>
-        <textarea matInput rows="4" formControlName="publicKey" placeholder="0x04..." readonly></textarea>
+        <textarea id="register-public-key" matInput rows="4" formControlName="publicKey" placeholder="0x04..." readonly></textarea>
         <mat-error
           *ngIf="
             registerForm.controls.publicKey.touched &&
@@ -35,7 +35,7 @@
         <p class="backup-title">Private key backup (save it before registration)</p>
         <mat-form-field appearance="outline">
           <mat-label>Private key</mat-label>
-          <textarea matInput rows="3" [value]="generatedPrivateKey" readonly></textarea>
+          <textarea id="register-private-key-backup" matInput rows="3" [value]="generatedPrivateKey" readonly></textarea>
         </mat-form-field>
         <p class="backup-note">
           This key is shown once and kept only in current page memory. Export it to a secure password manager
@@ -43,7 +43,7 @@
         </p>
       </div>
 
-      <mat-checkbox formControlName="backupConfirmed">
+      <mat-checkbox id="register-backup-confirmed" formControlName="backupConfirmed">
         I have securely backed up the generated private key.
       </mat-checkbox>
       <p *ngIf="registerForm.controls.backupConfirmed.touched && registerForm.controls.backupConfirmed.invalid" class="checkbox-error">
