@@ -10,6 +10,7 @@
     </button>
 
     <form class="register-form" [formGroup]="registerForm" (ngSubmit)="submitRegistration()">
+      <label class="visually-hidden" for="register-did">DID</label>
       <mat-form-field appearance="outline">
         <mat-label>DID</mat-label>
         <input id="register-did" matInput formControlName="did" placeholder="did:ethr:0x..." readonly />
@@ -18,6 +19,7 @@
         </mat-error>
       </mat-form-field>
 
+      <label class="visually-hidden" for="register-public-key">Public key</label>
       <mat-form-field appearance="outline">
         <mat-label>Public key</mat-label>
         <textarea id="register-public-key" matInput rows="4" formControlName="publicKey" placeholder="0x04..." readonly></textarea>
@@ -33,6 +35,7 @@
 
       <div *ngIf="generatedPrivateKey" class="key-backup">
         <p class="backup-title">Private key backup (save it before registration)</p>
+        <label class="visually-hidden" for="register-private-key-backup">Private key backup</label>
         <mat-form-field appearance="outline">
           <mat-label>Private key</mat-label>
           <textarea id="register-private-key-backup" matInput rows="3" [value]="generatedPrivateKey" readonly></textarea>
