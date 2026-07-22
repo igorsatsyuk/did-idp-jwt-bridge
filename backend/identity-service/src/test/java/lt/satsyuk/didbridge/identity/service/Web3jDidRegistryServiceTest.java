@@ -3,9 +3,9 @@ package lt.satsyuk.didbridge.identity.service;
 import lt.satsyuk.didbridge.identity.contract.DidRegistry;
 import lt.satsyuk.didbridge.model.DidDocument;
 import lt.satsyuk.didbridge.model.DidStatus;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.web3j.protocol.core.RemoteFunctionCall;
@@ -28,6 +28,7 @@ class Web3jDidRegistryServiceTest {
     @Mock
     private DidRegistry contract;
 
+    @InjectMocks
     private Web3jDidRegistryService service;
 
     private static final String DID = "did:example:123";
@@ -35,11 +36,6 @@ class Web3jDidRegistryServiceTest {
     private static final BigInteger ACTIVE = BigInteger.ZERO;
     private static final BigInteger REVOKED = BigInteger.ONE;
     private static final BigInteger TIMESTAMP = BigInteger.valueOf(1_700_000_000L);
-
-    @BeforeEach
-    void setUp() {
-        service = new Web3jDidRegistryService(contract);
-    }
 
     @Test
     @SuppressWarnings("unchecked")
